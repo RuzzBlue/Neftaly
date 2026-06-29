@@ -155,9 +155,16 @@
 
   setOnAuthenticated(() => initApp());
 
-  initAuth().then(async (loggedIn) => {
-    if (loggedIn) await initApp();
-  });
+  initAuth()
+    .then(async (loggedIn) => {
+      if (loggedIn) await initApp();
+    })
+    .catch((err) => {
+      console.error('Init failed:', err);
+      document.getElementById('login-error')?.classList.remove('d-none');
+      const el = document.getElementById('login-error');
+      if (el) el.textContent = err?.message || 'Error al iniciar la app';
+    });
 </script>
 </body>
 </html>
