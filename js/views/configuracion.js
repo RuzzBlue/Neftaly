@@ -12,6 +12,12 @@ let configModalsReady = false;
 let deleteConfirmHandler = null;
 let saving = false;
 
+const CARGO_TAG_GUIA = '__guia__';
+const CARGO_TAG_SUBGUIA = '__subguia__';
+
+/** Persist filters across re-renders */
+let memberFilters = { search: '', patrullaId: '', cargoTags: [] };
+
 export async function renderConfiguracion() {
   if (!isAdmin()) return;
   await refreshData();
@@ -43,11 +49,53 @@ export async function renderConfiguracion() {
 
     <div class="card mb-3">
       <div class="card-header d-flex justify-content-between align-items-center">
-        <span>Miembros</span>
+        <span>Miembros <span class="badge bg-secondary ms-1" id="cfg-miembros-count"></span></span>
         <button class="btn btn-sm btn-primary" id="cfg-add-miembro"><i class="fa-solid fa-plus me-1"></i>Nuevo</button>
       </div>
-      <div class="list-group list-group-flush">
-        ${miembros.map((m) => cfgMiembroRow(m, patrullas)).join('') || '<div class="list-group-item text-muted">Sin miembros</div>'}
+      <div class="card-body pb-2">
+        <div class="cfg-member-filters">
+          <div class="row g-2 mb-2">
+            <div class="col-12 col-md-4">
+              <label class="form-label small mb-1" for="cfg-miembro-search">Buscar</label>
+              <input type="search" class="form-control form-control-sm" id="cfg-miembro-search"
+                placeholder="Nombre…" value="${escapeHtml(memberFilters.search)}">
+            </div>
+            <div class="col-6 col-md-4">
+              <label class="form-label small mb-1" for="cfg-miembro-filter-patrulla">Patrulla</label>
+              <select class="form-select form-select-sm" id="cfg-miembro-filter-patrulla">
+                <option value="">Todas</option>
+                ${patrullas.map((p) =>
+                  `<option value="${p.id}" ${String(p.id) === memberFilters.patrullaId ? 'selected' : ''}>${escapeHtml(p.nombre)}</option>`
+                ).join('')}
+              </select>
+            </div>
+            <div class="col-6 col-md-4 d-flex align-items-end">
+              <button type="button" class="btn btn-sm btn-outline-secondary w-100" id="cfg-miembro-clear-filters">
+                <i class="fa-solid fa-filter-circle-xmark me-1"></i>Limpiar filtros
+              </button>
+            </div>
+          </div>
+          <div class="mb-2">
+            <label class="form-label small mb-1">Filtrar por cargo</label>
+            <div class="cfg-cargo-filter-row" id="cfg-miembro-filter-cargos">
+              ${buildCargoFilterCheckboxes(cargos)}
+            </div>
+            <p class="small text-muted mb-0 mt-1">Sin selección = todos. Con selección = miembros que tengan al menos uno.</p>
+          </div>
+        </div>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-sm table-hover cfg-members-table mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Nombre</th>
+              <th>Patrulla</th>
+              <th>Cargos</th>
+              <th class="text-end" style="width:5.5rem"></th>
+            </tr>
+          </thead>
+          <tbody id="cfg-miembros-tbody"></tbody>
+        </table>
       </div>
     </div>
 
@@ -80,17 +128,14 @@ export async function renderConfiguracion() {
   document.getElementById('cfg-add-cargo').onclick = () => openCargoModal(null);
   document.getElementById('btn-clear-all').onclick = openResetTroopModal;
 
+  bindMemberFilters();
+  renderMembersTableBody();
+
   el.querySelectorAll('.cfg-edit-patrulla').forEach((b) => {
     b.onclick = () => openPatrullaModal(parseInt(b.dataset.id, 10));
   });
   el.querySelectorAll('.cfg-del-patrulla').forEach((b) => {
     b.onclick = () => confirmDeletePatrulla(parseInt(b.dataset.id, 10));
-  });
-  el.querySelectorAll('.cfg-edit-miembro').forEach((b) => {
-    b.onclick = () => openMiembroModal(parseInt(b.dataset.id, 10));
-  });
-  el.querySelectorAll('.cfg-del-miembro').forEach((b) => {
-    b.onclick = () => confirmDeleteMiembro(parseInt(b.dataset.id, 10));
   });
   el.querySelectorAll('.cfg-edit-cargo').forEach((b) => {
     b.onclick = () => openCargoModal(parseInt(b.dataset.id, 10));
@@ -110,23 +155,135 @@ function cfgPatrullaRow(p) {
   </li>`;
 }
 
-function cfgMiembroRow(m, patrullas) {
-  const pat = patrullas.find((p) => p.id === m.patrulla_id);
-  const badges = [];
-  if (m.es_guia) badges.push('<span class="badge badge-guia me-1">Guía</span>');
-  if (m.es_subguia) badges.push('<span class="badge badge-subguia me-1">Subguía</span>');
-  getCargoNames(m.id).forEach((c) => badges.push(`<span class="badge bg-secondary me-1">${escapeHtml(c)}</span>`));
-  return `<div class="list-group-item d-flex justify-content-between align-items-start">
-    <div>
-      <strong>${escapeHtml(m.nombre)}</strong>
-      <div class="small text-muted">${escapeHtml(pat?.nombre || '')}</div>
-      ${badges.length ? `<div class="mt-1">${badges.join('')}</div>` : ''}
-    </div>
-    <span class="cfg-list-actions flex-shrink-0 ms-2">
-      <button type="button" class="btn btn-sm btn-outline-secondary cfg-edit-miembro" data-id="${m.id}" title="Editar"><i class="fa-solid fa-pen"></i></button>
-      <button type="button" class="btn btn-sm btn-outline-danger cfg-del-miembro" data-id="${m.id}" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
-    </span>
-  </div>`;
+function getMemberCargoTags(m) {
+  const tags = [];
+  if (m.es_guia) tags.push(CARGO_TAG_GUIA);
+  if (m.es_subguia) tags.push(CARGO_TAG_SUBGUIA);
+  const { cargos, miembroCargos } = getState();
+  miembroCargos
+    .filter((x) => x.miembro_id === m.id)
+    .forEach((x) => tags.push(`cargo:${x.cargo_id}`));
+  return tags;
+}
+
+function formatMemberCargoBadges(m) {
+  const parts = [];
+  if (m.es_guia) parts.push('<span class="badge badge-guia me-1">Guía</span>');
+  if (m.es_subguia) parts.push('<span class="badge badge-subguia me-1">Subguía</span>');
+  getCargoNames(m.id).forEach((c) => {
+    parts.push(`<span class="badge bg-secondary me-1">${escapeHtml(c)}</span>`);
+  });
+  return parts.length ? parts.join('') : '<span class="text-muted small">—</span>';
+}
+
+function cargoFilterDomId(value) {
+  return `fcf-${value.replace(/[^a-zA-Z0-9_-]/g, '-')}`;
+}
+
+function buildCargoFilterCheckboxes(cargos) {
+  const checked = new Set(memberFilters.cargoTags);
+  const items = [
+    { value: CARGO_TAG_GUIA, label: 'Guía' },
+    { value: CARGO_TAG_SUBGUIA, label: 'Subguía' },
+    ...cargos.map((c) => ({ value: `cargo:${c.id}`, label: c.nombre })),
+  ];
+  return items.map((item) => {
+    const domId = cargoFilterDomId(item.value);
+    return `<div class="form-check form-check-inline cfg-cargo-filter-item">
+      <input class="form-check-input cfg-filter-cargo" type="checkbox" value="${escapeHtml(item.value)}"
+        id="${domId}" ${checked.has(item.value) ? 'checked' : ''}>
+      <label class="form-check-label small" for="${domId}">${escapeHtml(item.label)}</label>
+    </div>`;
+  }).join('');
+}
+
+function readMemberFiltersFromDom() {
+  memberFilters.search = document.getElementById('cfg-miembro-search')?.value.trim() || '';
+  memberFilters.patrullaId = document.getElementById('cfg-miembro-filter-patrulla')?.value || '';
+  memberFilters.cargoTags = [...document.querySelectorAll('.cfg-filter-cargo:checked')].map((el) => el.value);
+}
+
+function filterMembers(miembros) {
+  readMemberFiltersFromDom();
+  const search = memberFilters.search.toLowerCase();
+  const patId = memberFilters.patrullaId ? parseInt(memberFilters.patrullaId, 10) : null;
+  const cargoTags = memberFilters.cargoTags;
+
+  return miembros.filter((m) => {
+    if (search && !m.nombre.toLowerCase().includes(search)) return false;
+    if (patId && m.patrulla_id !== patId) return false;
+    if (cargoTags.length) {
+      const memberTags = getMemberCargoTags(m);
+      const hasAny = cargoTags.some((t) => memberTags.includes(t));
+      if (!hasAny) return false;
+    }
+    return true;
+  });
+}
+
+function renderMembersTableBody() {
+  const tbody = document.getElementById('cfg-miembros-tbody');
+  const countEl = document.getElementById('cfg-miembros-count');
+  if (!tbody) return;
+
+  const { miembros, patrullas } = getState();
+  const filtered = filterMembers(miembros);
+
+  if (countEl) {
+    countEl.textContent = filtered.length === miembros.length
+      ? String(miembros.length)
+      : `${filtered.length}/${miembros.length}`;
+  }
+
+  if (!filtered.length) {
+    tbody.innerHTML = `<tr><td colspan="4" class="text-muted text-center py-3">
+      ${miembros.length ? 'Ningún miembro coincide con los filtros' : 'Sin miembros'}
+    </td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map((m) => {
+    const pat = patrullas.find((p) => p.id === m.patrulla_id);
+    return `<tr>
+      <td class="fw-semibold">${escapeHtml(m.nombre)}</td>
+      <td>
+        <span class="color-swatch me-1" style="background:${escapeHtml(pat?.color || '#6c757d')}"></span>
+        ${escapeHtml(pat?.nombre || '—')}
+      </td>
+      <td class="cfg-cargos-cell">${formatMemberCargoBadges(m)}</td>
+      <td class="text-end cfg-list-actions">
+        <button type="button" class="btn btn-sm btn-outline-secondary cfg-edit-miembro" data-id="${m.id}" title="Editar"><i class="fa-solid fa-pen"></i></button>
+        <button type="button" class="btn btn-sm btn-outline-danger cfg-del-miembro" data-id="${m.id}" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
+      </td>
+    </tr>`;
+  }).join('');
+
+  tbody.querySelectorAll('.cfg-edit-miembro').forEach((b) => {
+    b.onclick = () => openMiembroModal(parseInt(b.dataset.id, 10));
+  });
+  tbody.querySelectorAll('.cfg-del-miembro').forEach((b) => {
+    b.onclick = () => confirmDeleteMiembro(parseInt(b.dataset.id, 10));
+  });
+}
+
+function bindMemberFilters() {
+  const search = document.getElementById('cfg-miembro-search');
+  const patrulla = document.getElementById('cfg-miembro-filter-patrulla');
+  const clearBtn = document.getElementById('cfg-miembro-clear-filters');
+
+  search?.addEventListener('input', renderMembersTableBody);
+  patrulla?.addEventListener('change', renderMembersTableBody);
+  document.querySelectorAll('.cfg-filter-cargo').forEach((cb) => {
+    cb.addEventListener('change', renderMembersTableBody);
+  });
+
+  clearBtn?.addEventListener('click', () => {
+    memberFilters = { search: '', patrullaId: '', cargoTags: [] };
+    if (search) search.value = '';
+    if (patrulla) patrulla.value = '';
+    document.querySelectorAll('.cfg-filter-cargo').forEach((cb) => { cb.checked = false; });
+    renderMembersTableBody();
+  });
 }
 
 function cfgCargoRow(c) {

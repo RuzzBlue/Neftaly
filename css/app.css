@@ -161,6 +161,35 @@ body {
   min-width: 2.25rem;
 }
 
+.cfg-member-filters {
+  background: #f8f9fa;
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+}
+
+.cfg-cargo-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.75rem;
+}
+
+.cfg-members-table th {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+.cfg-members-table td {
+  vertical-align: middle;
+}
+
+.cfg-cargos-cell {
+  min-width: 8rem;
+}
+
 @media (max-width: 576px) {
+  .cfg-members-table { font-size: 0.875rem; }
+  .cfg-cargo-filter-item { display: block; margin-right: 0 !important; }
   .patrulla-card .total-num { font-size: 1.4rem; }
 }
