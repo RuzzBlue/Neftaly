@@ -11,6 +11,7 @@ const COLOR_PRESETS = [
 let configModalsReady = false;
 let deleteConfirmHandler = null;
 let saving = false;
+let pendingDeletePatrullaId = null;
 
 const CARGO_TAG_GUIA = '__guia__';
 const CARGO_TAG_SUBGUIA = '__subguia__';
@@ -335,6 +336,10 @@ export function initConfigModals() {
   document.getElementById('cfg-delete-confirm')?.addEventListener('click', () => {
     if (deleteConfirmHandler) deleteConfirmHandler().catch(showError);
   });
+
+  document.getElementById('del-patrulla-confirm')?.addEventListener('click', () => {
+    executeDeletePatrulla().catch(showError);
+  });
 }
 
 function buildColorPresets() {
@@ -429,14 +434,102 @@ async function savePatrullaModal() {
 }
 
 function confirmDeletePatrulla(id) {
+  initConfigModals();
   const p = getState().patrullas.find((x) => x.id === id);
-  openDeleteModal(`¿Eliminar la patrulla "${p?.nombre}"? Debe no tener miembros asignados.`, async () => {
+  if (!p) return;
+
+  pendingDeletePatrullaId = id;
+  const count = getState().miembros.filter((m) => m.patrulla_id === id).length;
+
+  document.getElementById('del-patrulla-title').textContent = `Eliminar "${p.nombre}"`;
+  document.getElementById('del-patrulla-info').textContent = count
+    ? `Esta patrulla tiene ${count} miembro${count === 1 ? '' : 's'}. ¿Qué deseas hacer?`
+    : 'Esta patrulla no tiene miembros. Se eliminarán también sus puntos registrados.';
+  document.getElementById('del-patrulla-options').classList.toggle('d-none', count === 0);
+
+  const relocate = document.getElementById('del-patrulla-relocate');
+  if (relocate) relocate.checked = true;
+
+  showModal('modal-delete-patrulla');
+}
+
+async function findOrCreateDefaultPatrulla(excludeId) {
+  const { patrullas } = getState();
+
+  const defaultPatrullas = patrullas
+    .filter((p) => p.id !== excludeId && /^default\s+\d+$/i.test(p.nombre.trim()))
+    .sort((a, b) => {
+      const na = parseInt(a.nombre.match(/\d+/)?.[0] || '0', 10);
+      const nb = parseInt(b.nombre.match(/\d+/)?.[0] || '0', 10);
+      return na - nb;
+    });
+
+  if (defaultPatrullas.length) return defaultPatrullas[0];
+
+  let n = 1;
+  while (patrullas.some(
+    (p) => p.id !== excludeId && p.nombre.toLowerCase() === `default ${n}`.toLowerCase()
+  )) {
+    n += 1;
+  }
+
+  const { data, error } = await window.supabase
+    .from('patrullas')
+    .insert({ nombre: `Default ${n}`, color: '#6c757d', orden: 999 })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+async function executeDeletePatrulla() {
+  if (saving || pendingDeletePatrullaId == null) return;
+  const id = pendingDeletePatrullaId;
+  const mode = document.querySelector('input[name="del-patrulla-mode"]:checked')?.value || 'relocate';
+  const members = getState().miembros.filter((m) => m.patrulla_id === id);
+
+  saving = true;
+  const btn = document.getElementById('del-patrulla-confirm');
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Eliminando…';
+  }
+
+  try {
+    if (members.length && mode === 'delete-members') {
+      for (const m of members) {
+        const { error } = await window.supabase.from('miembros').update({ activo: false }).eq('id', m.id);
+        if (error) throw error;
+      }
+    } else if (members.length && mode === 'relocate') {
+      const target = await findOrCreateDefaultPatrulla(id);
+      for (const m of members) {
+        const { error } = await window.supabase
+          .from('miembros')
+          .update({ patrulla_id: target.id, es_guia: false, es_subguia: false })
+          .eq('id', m.id);
+        if (error) throw error;
+      }
+      toast(`Miembros movidos a "${target.nombre}"`);
+    }
+
+    const { error: ptsErr } = await window.supabase.from('puntos_patrulla').delete().eq('patrulla_id', id);
+    if (ptsErr) throw ptsErr;
+
     const { error } = await window.supabase.from('patrullas').delete().eq('id', id);
     if (error) throw error;
-    hideModal('modal-cfg-delete');
+
+    hideModal('modal-delete-patrulla');
+    pendingDeletePatrullaId = null;
     toast('Patrulla eliminada', 'warning');
     renderConfiguracion();
-  });
+  } finally {
+    saving = false;
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = 'Eliminar patrulla';
+    }
+  }
 }
 
 // ─── Miembro ───────────────────────────────────────────────
