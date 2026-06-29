@@ -137,6 +137,52 @@
   </div>
 </div>
 
+<!-- Modal reiniciar tropa -->
+<div class="modal fade" id="modal-reset-troop" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-danger">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title"><i class="fa-solid fa-triangle-exclamation me-2"></i> Reiniciar tropa</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p class="small text-muted mb-3">
+          Siempre se borran <strong>puntos de patrullas</strong>, <strong>puntos personales (bitácora)</strong>,
+          <strong>registro de acciones</strong> y se reinicia al <strong>Ciclo 1</strong>.
+        </p>
+        <p class="fw-semibold mb-2">¿Qué deseas conservar?</p>
+        <div class="form-check mb-2">
+          <input class="form-check-input" type="checkbox" id="reset-keep-patrullas">
+          <label class="form-check-label" for="reset-keep-patrullas">
+            Nombres y colores de las patrullas
+          </label>
+        </div>
+        <div class="form-check mb-2">
+          <input class="form-check-input" type="checkbox" id="reset-keep-miembros" disabled>
+          <label class="form-check-label" for="reset-keep-miembros">
+            Miembros y su patrulla asignada
+          </label>
+        </div>
+        <div class="form-check mb-3">
+          <input class="form-check-input" type="checkbox" id="reset-keep-asistencia" disabled>
+          <label class="form-check-label" for="reset-keep-asistencia">
+            Asistencias de fechas pasadas
+          </label>
+        </div>
+        <div id="reset-summary" class="alert alert-warning small py-2 mb-3"></div>
+        <label class="form-label small text-danger fw-semibold" for="reset-confirm-text">
+          Escribe <strong>BORRAR</strong> para confirmar
+        </label>
+        <input type="text" class="form-control" id="reset-confirm-text" autocomplete="off" placeholder="BORRAR">
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-danger" id="reset-submit" disabled>Confirmar reinicio</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script type="module">
   import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';

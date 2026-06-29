@@ -137,10 +137,19 @@ export async function setAsistencia(miembroId, fecha, estado) {
   await refreshData();
 }
 
-export async function clearAllData() {
-  const { error } = await window.supabase.rpc('clear_all_data');
+export async function resetTroopData({ keepPatrullas, keepMiembros, keepAsistencia }) {
+  const { error } = await window.supabase.rpc('reset_troop_data', {
+    keep_patrullas: keepPatrullas,
+    keep_miembros: keepMiembros,
+    keep_asistencia: keepAsistencia,
+  });
   if (error) throw error;
   await refreshData();
+}
+
+/** @deprecated use resetTroopData */
+export async function clearAllData() {
+  return resetTroopData({ keepPatrullas: false, keepMiembros: false, keepAsistencia: false });
 }
 
 export { isAdmin, escapeHtml, fmtDate, getLastSaturday, groupSum, computeAsistenciaStats, showError };

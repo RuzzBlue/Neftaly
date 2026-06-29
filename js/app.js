@@ -1,6 +1,6 @@
 import { renderOverview, submitPatrullaPointsModal, submitMemberPointsModal } from './views/overview.js';
 import { renderAsistencia } from './views/asistencia.js';
-import { renderConfiguracion } from './views/configuracion.js';
+import { renderConfiguracion, initResetModal, openResetTroopModal } from './views/configuracion.js';
 import { renderReportes } from './views/reportes.js';
 import { renderLog } from './views/log.js';
 import { getCurrentCiclo } from './auth.js';
@@ -28,6 +28,7 @@ export async function initApp() {
   if (!bindingsReady) {
     bindNav();
     bindModals();
+    initResetModal();
     bindingsReady = true;
   }
 

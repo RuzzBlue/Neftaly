@@ -1,4 +1,4 @@
-import { refreshData, getState, clearAllData, isAdmin } from '../data.js';
+import { refreshData, getState, resetTroopData, isAdmin } from '../data.js';
 import { setCurrentCiclo } from '../auth.js';
 import { AREAS, CICLOS } from '../constants.js';
 import { escapeHtml, showError, toast } from '../utils.js';
@@ -57,8 +57,8 @@ export async function renderConfiguracion() {
 
     <div class="danger-zone">
       <h6 class="text-danger"><i class="fa-solid fa-triangle-exclamation"></i> Zona peligrosa — nuevo año</h6>
-      <p class="small mb-2">Borra patrullas, miembros, puntos, asistencia y logs. Reinicia al ciclo 1. Solo usar al empezar un año scout nuevo.</p>
-      <button class="btn btn-danger btn-sm" id="btn-clear-all">Borrar todo y reiniciar</button>
+      <p class="small mb-2">Reinicia puntos y ciclo para un año nuevo. Elige qué conservar antes de confirmar.</p>
+      <button class="btn btn-danger btn-sm" id="btn-clear-all">Reiniciar tropa…</button>
     </div>`;
 
   el.querySelectorAll('[data-ciclo]').forEach((btn) => {
@@ -72,7 +72,7 @@ export async function renderConfiguracion() {
   document.getElementById('cfg-add-patrulla').onclick = addPatrulla;
   document.getElementById('cfg-add-miembro').onclick = addMiembro;
   document.getElementById('cfg-add-cargo').onclick = addCargo;
-  document.getElementById('btn-clear-all').onclick = onClearAll;
+  document.getElementById('btn-clear-all').onclick = openResetTroopModal;
   el.querySelectorAll('.cfg-del-cargo').forEach((b) => {
     b.onclick = () => deleteCargo(parseInt(b.dataset.id, 10));
   });
@@ -196,14 +196,105 @@ async function deleteCargo(id) {
   renderConfiguracion();
 }
 
-async function onClearAll() {
-  const typed = prompt('Escribe BORRAR TODO para confirmar:');
-  if (typed !== 'BORRAR TODO') return;
+let resetModalReady = false;
+let resetSubmitting = false;
+
+function updateResetSummary() {
+  const keepPat = document.getElementById('reset-keep-patrullas')?.checked;
+  const keepMem = document.getElementById('reset-keep-miembros')?.checked;
+  const keepAsis = document.getElementById('reset-keep-asistencia')?.checked;
+  const el = document.getElementById('reset-summary');
+  if (!el) return;
+
+  const keep = [];
+  const remove = ['Puntos de patrullas', 'Puntos personales', 'Registro de acciones'];
+  if (keepPat) keep.push('Patrullas (nombres y colores)');
+  else remove.push('Patrullas');
+  if (keepMem) keep.push('Miembros y cargos');
+  else remove.push('Miembros y cargos');
+  if (keepAsis) keep.push('Asistencias pasadas');
+  else remove.push('Asistencias');
+
+  el.innerHTML = `
+    <div><strong>Se conservará:</strong> ${keep.length ? keep.join(', ') : 'Nada'}</div>
+    <div class="mt-1"><strong>Se eliminará:</strong> ${remove.join(', ')}</div>
+    <div class="mt-1"><strong>Ciclo:</strong> se reinicia a 1</div>`;
+}
+
+function syncResetCheckboxes() {
+  const pat = document.getElementById('reset-keep-patrullas');
+  const mem = document.getElementById('reset-keep-miembros');
+  const asis = document.getElementById('reset-keep-asistencia');
+  if (!pat || !mem || !asis) return;
+
+  mem.disabled = !pat.checked;
+  if (!pat.checked) {
+    mem.checked = false;
+    asis.checked = false;
+  }
+
+  asis.disabled = !mem.checked;
+  if (!mem.checked) asis.checked = false;
+
+  updateResetSummary();
+  updateResetConfirmBtn();
+}
+
+function updateResetConfirmBtn() {
+  const text = document.getElementById('reset-confirm-text')?.value.trim();
+  const btn = document.getElementById('reset-submit');
+  if (btn) btn.disabled = text !== 'BORRAR' || resetSubmitting;
+}
+
+export function initResetModal() {
+  if (resetModalReady) return;
+  resetModalReady = true;
+
+  document.getElementById('reset-keep-patrullas')?.addEventListener('change', syncResetCheckboxes);
+  document.getElementById('reset-keep-miembros')?.addEventListener('change', syncResetCheckboxes);
+  document.getElementById('reset-keep-asistencia')?.addEventListener('change', syncResetCheckboxes);
+  document.getElementById('reset-confirm-text')?.addEventListener('input', updateResetConfirmBtn);
+  document.getElementById('reset-submit')?.addEventListener('click', () => {
+    submitResetTroopModal().catch(showError);
+  });
+
+  document.getElementById('modal-reset-troop')?.addEventListener('hidden.bs.modal', () => {
+    document.getElementById('reset-confirm-text').value = '';
+    document.getElementById('reset-keep-patrullas').checked = false;
+    syncResetCheckboxes();
+  });
+}
+
+export function openResetTroopModal() {
+  initResetModal();
+  document.getElementById('reset-confirm-text').value = '';
+  document.getElementById('reset-keep-patrullas').checked = false;
+  syncResetCheckboxes();
+  bootstrap.Modal.getOrCreateInstance(document.getElementById('modal-reset-troop')).show();
+}
+
+export async function submitResetTroopModal() {
+  if (resetSubmitting) return;
+  const confirmText = document.getElementById('reset-confirm-text')?.value.trim();
+  if (confirmText !== 'BORRAR') return;
+
+  const keepPatrullas = document.getElementById('reset-keep-patrullas').checked;
+  const keepMiembros = document.getElementById('reset-keep-miembros').checked;
+  const keepAsistencia = document.getElementById('reset-keep-asistencia').checked;
+
+  resetSubmitting = true;
+  updateResetConfirmBtn();
+  const btn = document.getElementById('reset-submit');
+  if (btn) btn.textContent = 'Reiniciando…';
+
   try {
-    await clearAllData();
-    toast('Datos reiniciados', 'warning');
+    await resetTroopData({ keepPatrullas, keepMiembros, keepAsistencia });
+    bootstrap.Modal.getInstance(document.getElementById('modal-reset-troop')).hide();
+    toast('Tropa reiniciada', 'warning');
     renderConfiguracion();
-  } catch (e) {
-    showError(e);
+  } finally {
+    resetSubmitting = false;
+    if (btn) btn.textContent = 'Confirmar reinicio';
+    updateResetConfirmBtn();
   }
 }
