@@ -27,11 +27,9 @@ function estadoLabel(key) {
   return estadoMeta(key)?.label || key;
 }
 
-function nextEstado(current, allowClear) {
+function nextEstado(current) {
   const i = ESTADO_CYCLE.indexOf(current);
-  let next = ESTADO_CYCLE[(i + 1) % ESTADO_CYCLE.length];
-  if (!allowClear && !next) next = 'asistio';
-  return next;
+  return ESTADO_CYCLE[(i + 1) % ESTADO_CYCLE.length];
 }
 
 function getMeetingDatesInMonth(year, month, asistenciaRows) {
@@ -217,7 +215,7 @@ async function renderMesTab(el) {
       </div>
       <input type="month" class="form-control form-control-sm w-auto" id="asist-month-picker" value="${year}-${String(month).padStart(2, '0')}">
     </div>
-    <p class="text-muted small mb-2">Toca una celda para cambiar el estado. Columnas <strong>S</strong> = sábado.</p>
+    <p class="text-muted small mb-2">Toca una celda para cambiar: sin registro → asistió → no asistió → licencia → sin registro. Columnas <strong>S</strong> = sábado.</p>
     <div class="asist-legend mb-2">
       ${ASISTENCIA_ESTADOS.map((s) => `<span>${estadoIcon(s.key)} ${s.label}</span>`).join('')}
       <span>${estadoIcon('')} Sin registro</span>
@@ -248,7 +246,7 @@ async function renderMesTab(el) {
       const miembroId = parseInt(cell.dataset.miembro, 10);
       const fecha = cell.dataset.fecha;
       const current = byKey[`${miembroId}:${fecha}`] || '';
-      const next = nextEstado(current, isAdmin());
+      const next = nextEstado(current);
       if (!next) {
         await deleteAsistencia(miembroId, fecha);
       } else {
