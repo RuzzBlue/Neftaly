@@ -1,38 +1,60 @@
 import { showError } from './utils.js';
 
 let profile = null;
+let onAuthenticated = null;
 
 export function getProfile() { return profile; }
 export function isAdmin() { return profile?.role === 'admin'; }
 
+export function setOnAuthenticated(fn) {
+  onAuthenticated = fn;
+}
+
 export async function initAuth() {
   const sb = window.supabase;
-  sb.auth.onAuthStateChange((_event, session) => {
-    if (session) showAppShell();
-    else showLogin();
+
+  document.getElementById('login-form')?.addEventListener('submit', onLogin);
+  document.getElementById('btn-logout')?.addEventListener('click', onLogout);
+
+  sb.auth.onAuthStateChange(async (_event, session) => {
+    if (session) {
+      await loadProfile();
+      showAppShell();
+      if (onAuthenticated) await onAuthenticated();
+    } else {
+      profile = null;
+      showLogin();
+    }
   });
 
   const { data: { session } } = await sb.auth.getSession();
   if (session) {
     await loadProfile();
     showAppShell();
-  } else {
-    showLogin();
+    return true;
   }
-
-  document.getElementById('login-form')?.addEventListener('submit', onLogin);
-  document.getElementById('btn-logout')?.addEventListener('click', onLogout);
+  showLogin();
+  return false;
 }
 
 async function loadProfile() {
   const { data: { user } } = await window.supabase.auth.getUser();
   if (!user) return;
+
   const { data, error } = await window.supabase
     .from('profiles')
     .select('*')
     .eq('id', user.id)
-    .single();
+    .maybeSingle();
+
   if (error) throw error;
+
+  if (!data) {
+    throw new Error(
+      'No hay perfil para este usuario. Ejecuta supabase/003_backfill_profiles.sql en Supabase.'
+    );
+  }
+
   profile = data;
   const nameEl = document.getElementById('user-display-name');
   if (nameEl) nameEl.textContent = data.nombre || data.email;
@@ -43,7 +65,6 @@ async function onLogin(e) {
   e.preventDefault();
   const email = document.getElementById('login-email').value.trim();
   const password = document.getElementById('login-password').value;
-  const remember = document.getElementById('login-remember').checked;
   const errEl = document.getElementById('login-error');
   errEl.classList.add('d-none');
 
@@ -53,11 +74,16 @@ async function onLogin(e) {
     errEl.classList.remove('d-none');
     return;
   }
-  if (!remember) {
-    /* session still persists in localStorage by default; user can clear browser data */
+
+  try {
+    await loadProfile();
+    showAppShell();
+    if (onAuthenticated) await onAuthenticated();
+  } catch (err) {
+    errEl.textContent = err?.message || String(err);
+    errEl.classList.remove('d-none');
+    await window.supabase.auth.signOut();
   }
-  await loadProfile();
-  showAppShell();
 }
 
 async function onLogout() {
@@ -88,8 +114,8 @@ export async function getCurrentCiclo() {
     .from('app_config')
     .select('value')
     .eq('key', 'ciclo_actual')
-    .single();
-  if (error) showError(error);
+    .maybeSingle();
+  if (error) throw error;
   return parseInt(data?.value || '2', 10);
 }
 

@@ -16,9 +16,16 @@ const views = {
 
 let currentView = 'resumen';
 
+let appReady = false;
+
 export async function initApp() {
   bindNav();
   bindModals();
+  if (appReady) {
+    await navigate(currentView);
+    return;
+  }
+  appReady = true;
   await updateCicloBadge();
   await navigate('resumen');
 }

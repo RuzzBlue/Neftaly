@@ -140,7 +140,7 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script type="module">
   import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-  import { initAuth } from './js/auth.js';
+  import { initAuth, setOnAuthenticated } from './js/auth.js';
   import { initApp } from './js/app.js';
 
   const cfg = window.NEFTALY_CONFIG;
@@ -153,7 +153,11 @@
     auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
   });
 
-  initAuth().then(() => initApp());
+  setOnAuthenticated(() => initApp());
+
+  initAuth().then(async (loggedIn) => {
+    if (loggedIn) await initApp();
+  });
 </script>
 </body>
 </html>
