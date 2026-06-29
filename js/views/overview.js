@@ -6,6 +6,8 @@ import {
 import { AREAS } from '../constants.js';
 
 let stack = [];
+let submittingPatrulla = false;
+let submittingMember = false;
 
 export async function renderOverview() {
   await refreshData();
@@ -69,16 +71,25 @@ function openPatrullaModal(mode) {
 }
 
 export async function submitPatrullaPointsModal() {
-  const modal = document.getElementById('modal-puntos-patrulla');
-  const mode = modal.dataset.mode;
-  const patrullaId = parseInt(modal.querySelector('#ppt-patrulla').value, 10);
-  let cant = parseInt(modal.querySelector('#ppt-cantidad').value, 10);
-  const nota = modal.querySelector('#ppt-nota').value.trim();
-  if (!cant || cant < 1) return;
-  if (mode === 'sub') cant = -cant;
-  await addPatrullaPoints(patrullaId, cant, nota);
-  bootstrap.Modal.getInstance(modal).hide();
-  renderList();
+  if (submittingPatrulla) return;
+  submittingPatrulla = true;
+  const btn = document.getElementById('ppt-submit');
+  if (btn) btn.disabled = true;
+  try {
+    const modal = document.getElementById('modal-puntos-patrulla');
+    const mode = modal.dataset.mode;
+    const patrullaId = parseInt(modal.querySelector('#ppt-patrulla').value, 10);
+    let cant = parseInt(modal.querySelector('#ppt-cantidad').value, 10);
+    const nota = modal.querySelector('#ppt-nota').value.trim();
+    if (!cant || cant < 1) return;
+    if (mode === 'sub') cant = -cant;
+    await addPatrullaPoints(patrullaId, cant, nota);
+    bootstrap.Modal.getInstance(modal).hide();
+    renderList();
+  } finally {
+    submittingPatrulla = false;
+    if (btn) btn.disabled = false;
+  }
 }
 
 function showPatrullaDetail(patrullaId) {
@@ -178,15 +189,24 @@ function openMemberModal(mode, miembroId) {
 }
 
 export async function submitMemberPointsModal() {
-  const modal = document.getElementById('modal-puntos-miembro');
-  const mode = modal.dataset.mode;
-  const miembroId = parseInt(modal.dataset.miembro, 10);
-  const area = modal.querySelector('#pmb-area').value;
-  let cant = parseInt(modal.querySelector('#pmb-cantidad').value, 10);
-  const nota = modal.querySelector('#pmb-nota').value.trim();
-  if (!cant || cant < 1) return;
-  if (mode === 'sub') cant = -cant;
-  await addCrecimientoPoints(miembroId, area, cant, nota);
-  bootstrap.Modal.getInstance(modal).hide();
-  showMemberDetail(miembroId);
+  if (submittingMember) return;
+  submittingMember = true;
+  const btn = document.getElementById('pmb-submit');
+  if (btn) btn.disabled = true;
+  try {
+    const modal = document.getElementById('modal-puntos-miembro');
+    const mode = modal.dataset.mode;
+    const miembroId = parseInt(modal.dataset.miembro, 10);
+    const area = modal.querySelector('#pmb-area').value;
+    let cant = parseInt(modal.querySelector('#pmb-cantidad').value, 10);
+    const nota = modal.querySelector('#pmb-nota').value.trim();
+    if (!cant || cant < 1) return;
+    if (mode === 'sub') cant = -cant;
+    await addCrecimientoPoints(miembroId, area, cant, nota);
+    bootstrap.Modal.getInstance(modal).hide();
+    showMemberDetail(miembroId);
+  } finally {
+    submittingMember = false;
+    if (btn) btn.disabled = false;
+  }
 }

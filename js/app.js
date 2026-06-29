@@ -15,17 +15,22 @@ const views = {
 };
 
 let currentView = 'resumen';
-
 let appReady = false;
+let bindingsReady = false;
 
 export async function initApp() {
-  bindNav();
-  bindModals();
   if (appReady) {
     await navigate(currentView);
     return;
   }
   appReady = true;
+
+  if (!bindingsReady) {
+    bindNav();
+    bindModals();
+    bindingsReady = true;
+  }
+
   await updateCicloBadge();
   await navigate('resumen');
 }

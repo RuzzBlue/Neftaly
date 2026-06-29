@@ -78,7 +78,7 @@ async function onLogin(e) {
   try {
     await loadProfile();
     showAppShell();
-    if (onAuthenticated) await onAuthenticated();
+    /* onAuthStateChange dispara initApp — no duplicar aquí */
   } catch (err) {
     errEl.textContent = err?.message || String(err);
     errEl.classList.remove('d-none');
