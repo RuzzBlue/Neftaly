@@ -125,6 +125,42 @@ body {
   background: #fff5f5;
 }
 
+.color-preset-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.color-preset {
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  border: 2px solid rgba(0,0,0,0.15);
+  padding: 0;
+  cursor: pointer;
+}
+
+.color-preset.active {
+  outline: 2px solid #0d6efd;
+  outline-offset: 2px;
+}
+
+.cfg-color-preview {
+  padding: 0.65rem 1rem;
+  border-radius: 0.5rem;
+  text-align: center;
+  font-weight: 600;
+  border: 1px solid rgba(0,0,0,0.1);
+}
+
+.cfg-cargo-checkboxes .form-check {
+  padding: 0.35rem 0.35rem 0.35rem 1.75rem;
+}
+
+.cfg-list-actions .btn {
+  min-width: 2.25rem;
+}
+
 @media (max-width: 576px) {
   .patrulla-card .total-num { font-size: 1.4rem; }
 }

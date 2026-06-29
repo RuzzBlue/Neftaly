@@ -137,6 +137,123 @@
   </div>
 </div>
 
+<!-- Modal configuración: patrulla -->
+<div class="modal fade" id="modal-cfg-patrulla" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modal-cfg-patrulla-title">Patrulla</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="cfg-patrulla-id">
+        <div class="mb-3">
+          <label class="form-label" for="cfg-patrulla-nombre">Nombre</label>
+          <input type="text" class="form-control" id="cfg-patrulla-nombre" required>
+        </div>
+        <div class="mb-2">
+          <label class="form-label">Color</label>
+          <div class="color-preset-row mb-2" id="cfg-patrulla-presets"></div>
+          <div class="d-flex gap-2 align-items-center">
+            <input type="color" class="form-control form-control-color flex-shrink-0" id="cfg-patrulla-color" value="#6c757d">
+            <input type="text" class="form-control" id="cfg-patrulla-color-hex" maxlength="7" placeholder="#6c757d">
+          </div>
+        </div>
+        <div id="cfg-patrulla-preview" class="cfg-color-preview mt-2"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="cfg-patrulla-save">Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal configuración: miembro -->
+<div class="modal fade" id="modal-cfg-miembro" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modal-cfg-miembro-title">Miembro</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="cfg-miembro-id">
+        <div class="mb-3">
+          <label class="form-label" for="cfg-miembro-nombre">Nombre</label>
+          <input type="text" class="form-control" id="cfg-miembro-nombre" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="cfg-miembro-patrulla">Patrulla</label>
+          <select class="form-select" id="cfg-miembro-patrulla"></select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Rol en patrulla</label>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="cfg-miembro-guia">
+            <label class="form-check-label" for="cfg-miembro-guia">Guía</label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="cfg-miembro-subguia">
+            <label class="form-check-label" for="cfg-miembro-subguia">Subguía</label>
+          </div>
+        </div>
+        <div class="mb-2">
+          <label class="form-label">Cargos de patrulla</label>
+          <div id="cfg-miembro-cargos" class="cfg-cargo-checkboxes"></div>
+          <p class="small text-muted mb-0" id="cfg-miembro-cargos-empty">No hay cargos definidos. Agrégalos abajo en la lista.</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="cfg-miembro-save">Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal configuración: cargo -->
+<div class="modal fade" id="modal-cfg-cargo" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modal-cfg-cargo-title">Cargo de patrulla</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="cfg-cargo-id">
+        <div class="mb-3">
+          <label class="form-label" for="cfg-cargo-nombre">Nombre del cargo</label>
+          <input type="text" class="form-control" id="cfg-cargo-nombre" placeholder="Ej. Cocinero/a, Secretario/a" required>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="cfg-cargo-save">Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal confirmar eliminación -->
+<div class="modal fade" id="modal-cfg-delete" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-danger">
+      <div class="modal-header bg-danger text-white py-2">
+        <h5 class="modal-title">Confirmar eliminación</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p class="mb-0" id="cfg-delete-message"></p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-danger" id="cfg-delete-confirm">Eliminar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Modal reiniciar tropa -->
 <div class="modal fade" id="modal-reset-troop" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
