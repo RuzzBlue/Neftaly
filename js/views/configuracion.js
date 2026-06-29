@@ -479,8 +479,27 @@ function openMiembroModal(id) {
   showModal('modal-cfg-miembro');
 }
 
-async function syncMiembroCargos(miembroId, selectedIds) {
-  const { miembroCargos } = getState();
+async function syncMiembroCargos(miembroId, selectedIds, patrullaId) {
+  const { miembros, miembroCargos } = getState();
+  const siblingIds = miembros
+    .filter((m) => m.patrulla_id === patrullaId && m.id !== miembroId)
+    .map((m) => m.id);
+
+  // Un cargo solo puede tener un miembro por patrulla
+  for (const cargo_id of selectedIds) {
+    for (const otherId of siblingIds) {
+      const hadCargo = miembroCargos.some(
+        (x) => x.miembro_id === otherId && x.cargo_id === cargo_id
+      );
+      if (!hadCargo) continue;
+      const { error } = await window.supabase.from('miembro_cargos')
+        .delete()
+        .eq('miembro_id', otherId)
+        .eq('cargo_id', cargo_id);
+      if (error) throw error;
+    }
+  }
+
   const current = miembroCargos.filter((x) => x.miembro_id === miembroId).map((x) => x.cargo_id);
   const toAdd = selectedIds.filter((cid) => !current.includes(cid));
   const toRemove = current.filter((cid) => !selectedIds.includes(cid));
@@ -526,7 +545,7 @@ async function saveMiembroModal() {
       miembroId = data.id;
       toast('Miembro creado');
     }
-    await syncMiembroCargos(miembroId, cargoIds);
+    await syncMiembroCargos(miembroId, cargoIds, patrulla_id);
     await refreshData();
     hideModal('modal-cfg-miembro');
     renderConfiguracion();
