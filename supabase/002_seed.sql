@@ -57,12 +57,6 @@ BEGIN
   END IF;
 END $$;
 
--- Actualizar roles de usuarios (ejecutar tras crear cuentas en Authentication)
-UPDATE public.profiles SET role = 'admin', nombre = 'Branko'
-  WHERE lower(email) = lower('Branko@gmail.com');
-UPDATE public.profiles SET role = 'admin', nombre = 'Luis'
-  WHERE lower(email) = lower('Luis@gmail.com');
-UPDATE public.profiles SET role = 'leader', nombre = 'Belen'
-  WHERE lower(email) = lower('Belen@gmail.com');
-UPDATE public.profiles SET role = 'leader', nombre = 'Liam'
-  WHERE lower(email) = lower('Liam@gmail.com');
+-- Actualizar roles (reemplaza con los emails que creaste en Authentication)
+-- UPDATE public.profiles SET role = 'admin', nombre = 'Tu nombre'
+--   WHERE lower(email) = lower('tu-email@ejemplo.com');

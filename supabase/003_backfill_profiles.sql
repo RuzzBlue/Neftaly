@@ -10,11 +10,6 @@ SELECT
 FROM auth.users u
 WHERE NOT EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = u.id);
 
-UPDATE public.profiles SET role = 'admin', nombre = 'Branko'
-  WHERE lower(email) = lower('Branko@gmail.com');
-UPDATE public.profiles SET role = 'admin', nombre = 'Luis'
-  WHERE lower(email) = lower('Luis@gmail.com');
-UPDATE public.profiles SET role = 'leader', nombre = 'Belen'
-  WHERE lower(email) = lower('Belen@gmail.com');
-UPDATE public.profiles SET role = 'leader', nombre = 'Liam'
-  WHERE lower(email) = lower('Liam@gmail.com');
+-- Reemplaza con tus emails reales:
+-- UPDATE public.profiles SET role = 'admin', nombre = 'Tu nombre'
+--   WHERE lower(email) = lower('tu-email@ejemplo.com');

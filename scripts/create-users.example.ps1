@@ -1,16 +1,15 @@
-# Copia este archivo a create-users.local.ps1 y pega tu secret key.
-# Ubicación: scripts/create-users.local.ps1 (misma carpeta que este archivo)
-# NO subas create-users.local.ps1 a GitHub (ya está en .gitignore)
+# Copia este archivo a create-users.local.ps1 y completa tus datos.
+# create-users.local.ps1 está en .gitignore — NO lo subas a GitHub.
 
-$ProjectUrl = "https://azdrmhzmldmeyiuhrwve.supabase.co"
+$ProjectUrl = "https://TU_PROJECT_ID.supabase.co"
 $SecretKey = "PEGAR_sb_secret_AQUI"
-$Password = "Neftaly2026!"
+$Password = "TU_CONTRASENA_TEMPORAL"
 
 $users = @(
-  @{ email = "Branko@gmail.com"; role = "admin"; nombre = "Branko" },
-  @{ email = "Luis@gmail.com"; role = "admin"; nombre = "Luis" },
-  @{ email = "Belen@gmail.com"; role = "leader"; nombre = "Belen" },
-  @{ email = "Liam@gmail.com"; role = "leader"; nombre = "Liam" }
+  @{ email = "admin1@ejemplo.com"; role = "admin"; nombre = "Admin 1" },
+  @{ email = "admin2@ejemplo.com"; role = "admin"; nombre = "Admin 2" },
+  @{ email = "lider1@ejemplo.com"; role = "leader"; nombre = "Líder 1" },
+  @{ email = "lider2@ejemplo.com"; role = "leader"; nombre = "Líder 2" }
 )
 
 foreach ($u in $users) {
@@ -22,8 +21,6 @@ foreach ($u in $users) {
     user_metadata = @{ nombre = $u.nombre }
   } | ConvertTo-Json -Depth 3
 
-  # IMPORTANTE: con las nuevas keys sb_secret_, solo usar header "apikey".
-  # NO poner sb_secret_ en Authorization: Bearer (eso causa 401/403).
   $headers = @{
     "apikey" = $SecretKey
     "Content-Type" = "application/json"
@@ -40,5 +37,4 @@ foreach ($u in $users) {
 }
 
 Write-Host ""
-Write-Host "Contrasena temporal para todos: $Password"
-Write-Host "Luego ejecuta supabase/002_seed.sql en el SQL Editor."
+Write-Host "Listo. Luego ejecuta supabase/002_seed.sql (ajusta roles con tus emails reales)."
