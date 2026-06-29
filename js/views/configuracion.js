@@ -479,6 +479,33 @@ function openMiembroModal(id) {
   showModal('modal-cfg-miembro');
 }
 
+async function clearExclusiveRolesInPatrulla(miembroId, patrullaId, { esGuia, esSubguia }) {
+  const { miembros } = getState();
+  const siblings = miembros.filter(
+    (m) => m.patrulla_id === patrullaId && m.id !== miembroId
+  );
+
+  if (esGuia) {
+    for (const s of siblings.filter((m) => m.es_guia)) {
+      const { error } = await window.supabase
+        .from('miembros')
+        .update({ es_guia: false })
+        .eq('id', s.id);
+      if (error) throw error;
+    }
+  }
+
+  if (esSubguia) {
+    for (const s of siblings.filter((m) => m.es_subguia)) {
+      const { error } = await window.supabase
+        .from('miembros')
+        .update({ es_subguia: false })
+        .eq('id', s.id);
+      if (error) throw error;
+    }
+  }
+}
+
 async function syncMiembroCargos(miembroId, selectedIds, patrullaId) {
   const { miembros, miembroCargos } = getState();
   const siblingIds = miembros
@@ -533,9 +560,14 @@ async function saveMiembroModal() {
 
   saving = true;
   try {
-    let miembroId;
+    let miembroId = idVal ? parseInt(idVal, 10) : null;
+
+    await clearExclusiveRolesInPatrulla(miembroId ?? -1, patrulla_id, {
+      esGuia: es_guia,
+      esSubguia: es_subguia,
+    });
+
     if (idVal) {
-      miembroId = parseInt(idVal, 10);
       const { error } = await window.supabase.from('miembros').update(payload).eq('id', miembroId);
       if (error) throw error;
       toast('Miembro actualizado');
