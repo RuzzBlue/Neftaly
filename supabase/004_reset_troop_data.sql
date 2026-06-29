@@ -51,3 +51,6 @@ BEGIN
   PERFORM public.reset_troop_data(false, false, false);
 END;
 $$;
+
+-- Recargar caché de API tras crear la función
+NOTIFY pgrst, 'reload schema';

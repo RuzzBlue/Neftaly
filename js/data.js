@@ -137,13 +137,52 @@ export async function setAsistencia(miembroId, fecha, estado) {
   await refreshData();
 }
 
+async function deleteAllFrom(table, column = 'id') {
+  const { error } = await window.supabase.from(table).delete().gte(column, 0);
+  if (error) throw error;
+}
+
+async function resetTroopDataClient({ keepPatrullas, keepMiembros, keepAsistencia }) {
+  if (keepMiembros && !keepPatrullas) {
+    throw new Error('No se pueden conservar miembros sin patrullas');
+  }
+  if (keepAsistencia && !keepMiembros) {
+    throw new Error('No se puede conservar asistencia sin miembros');
+  }
+
+  await deleteAllFrom('action_log');
+  await deleteAllFrom('puntos_crecimiento');
+  await deleteAllFrom('puntos_patrulla');
+
+  if (!keepAsistencia) await deleteAllFrom('asistencia');
+  if (!keepMiembros) {
+    await deleteAllFrom('miembro_cargos', 'miembro_id');
+    await deleteAllFrom('miembros');
+  }
+  if (!keepPatrullas) {
+    await deleteAllFrom('cargos');
+    await deleteAllFrom('patrullas');
+  }
+
+  const { error } = await window.supabase
+    .from('app_config')
+    .upsert({ key: 'ciclo_actual', value: '1' });
+  if (error) throw error;
+}
+
 export async function resetTroopData({ keepPatrullas, keepMiembros, keepAsistencia }) {
   const { error } = await window.supabase.rpc('reset_troop_data', {
     keep_patrullas: keepPatrullas,
     keep_miembros: keepMiembros,
     keep_asistencia: keepAsistencia,
   });
-  if (error) throw error;
+
+  if (error?.code === 'PGRST202') {
+    await resetTroopDataClient({ keepPatrullas, keepMiembros, keepAsistencia });
+  } else if (error) {
+    throw error;
+  }
+
   await refreshData();
 }
 
