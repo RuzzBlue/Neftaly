@@ -98,9 +98,12 @@ function showPatrullaDetail(patrullaId) {
   const p = patrullas.find((x) => x.id === patrullaId);
   const members = miembros.filter((m) => m.patrulla_id === patrullaId);
   const areas = patrullaAreaTotals(patrullaId);
-  const areaHtml = AREAS.map((a) =>
-    `<div class="area-badge"><span>${a.label}</span><strong>${areas[a.key] || 0}</strong></div>`
-  ).join('');
+  const areaHtml = `
+    <div class="area-grid-patrulla">
+      ${AREAS.map((a) =>
+        `<div class="area-compact">${a.label}: <strong>${areas[a.key] || 0}</strong></div>`
+      ).join('')}
+    </div>`;
 
   const list = members.map((m) => {
     const badges = [];
@@ -121,9 +124,9 @@ function showPatrullaDetail(patrullaId) {
       ${isAdmin() ? `<button class="btn btn-sm btn-outline-secondary ms-auto" id="btn-edit-patrulla"><i class="fa-solid fa-pen"></i></button>` : ''}
     </div>
     <p class="text-muted small mb-2">Ciclo ${ciclo} · ${patrullaPoints(patrullaId)} pts patrulla</p>
-    <h6>Áreas de crecimiento (total patrulla)</h6>
+    <h6 class="mb-1">Áreas de crecimiento (total patrulla)</h6>
     ${areaHtml}
-    <h6 class="mt-3">Miembros</h6>
+    <h6 class="mt-2 mb-2">Miembros</h6>
     <div class="bg-white rounded p-2">${list || '<p class="text-muted mb-0">Sin miembros</p>'}</div>`;
 
   document.getElementById('btn-back-overview').onclick = () => { stack.pop(); renderList(); };

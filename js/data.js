@@ -137,6 +137,15 @@ export async function setAsistencia(miembroId, fecha, estado) {
   await refreshData();
 }
 
+export async function deleteAsistencia(miembroId, fecha) {
+  const { error } = await window.supabase.from('asistencia')
+    .delete()
+    .eq('miembro_id', miembroId)
+    .eq('fecha', fecha);
+  if (error) throw error;
+  await refreshData();
+}
+
 async function deleteAllFrom(table, column = 'id') {
   const { error } = await window.supabase.from(table).delete().gte(column, 0);
   if (error) throw error;

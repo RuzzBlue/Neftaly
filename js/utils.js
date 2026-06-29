@@ -27,6 +27,38 @@ export function getRecentSaturdays(count, from = getLastSaturday()) {
   return out;
 }
 
+export function padMonth(n) {
+  return String(n).padStart(2, '0');
+}
+
+export function getMonthRange(year, month) {
+  const start = `${year}-${padMonth(month)}-01`;
+  const lastDay = new Date(year, month, 0).getDate();
+  const end = `${year}-${padMonth(month)}-${String(lastDay).padStart(2, '0')}`;
+  return { start, end };
+}
+
+export function getSaturdaysInMonth(year, month) {
+  const dates = [];
+  const d = new Date(year, month - 1, 1);
+  d.setHours(12, 0, 0, 0);
+  while (d.getMonth() === month - 1) {
+    if (d.getDay() === 6) dates.push(fmtDate(new Date(d)));
+    d.setDate(d.getDate() + 1);
+  }
+  return dates;
+}
+
+export function formatShortDate(fecha) {
+  const parts = fecha.split('-');
+  return `${parts[2]}/${parts[1]}`;
+}
+
+export function formatMonthLabel(year, month) {
+  const d = new Date(year, month - 1, 1);
+  return d.toLocaleDateString('es', { month: 'long', year: 'numeric' });
+}
+
 export function toast(msg, type = 'success') {
   const el = document.createElement('div');
   el.className = `alert alert-${type} position-fixed bottom-0 start-50 translate-middle-x mb-3 shadow`;

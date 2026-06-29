@@ -136,7 +136,7 @@ export async function renderConfiguracion() {
     b.onclick = () => openPatrullaModal(parseInt(b.dataset.id, 10));
   });
   el.querySelectorAll('.cfg-del-patrulla').forEach((b) => {
-    b.onclick = () => confirmDeletePatrulla(parseInt(b.dataset.id, 10));
+    b.onclick = () => confirmDeletePatrulla(parseInt(b.dataset.id, 10)).catch(showError);
   });
   el.querySelectorAll('.cfg-edit-cargo').forEach((b) => {
     b.onclick = () => openCargoModal(parseInt(b.dataset.id, 10));
@@ -433,13 +433,48 @@ async function savePatrullaModal() {
   }
 }
 
-function confirmDeletePatrulla(id) {
+async function fetchMemberIdsByPatrulla(patrullaId) {
+  const { data, error } = await window.supabase
+    .from('miembros')
+    .select('id')
+    .eq('patrulla_id', patrullaId);
+  if (error) throw error;
+  return (data || []).map((m) => m.id);
+}
+
+async function hardDeleteMiembros(ids) {
+  if (!ids.length) return;
+  const { error: pcErr } = await window.supabase
+    .from('puntos_crecimiento')
+    .delete()
+    .in('miembro_id', ids);
+  if (pcErr) throw pcErr;
+
+  const { error } = await window.supabase.from('miembros').delete().in('id', ids);
+  if (error) throw error;
+}
+
+async function hardDeleteAllMiembrosInPatrulla(patrullaId) {
+  const ids = await fetchMemberIdsByPatrulla(patrullaId);
+  await hardDeleteMiembros(ids);
+}
+
+async function relocateAllMiembrosFromPatrulla(patrullaId, targetId) {
+  const { error } = await window.supabase
+    .from('miembros')
+    .update({ patrulla_id: targetId, es_guia: false, es_subguia: false })
+    .eq('patrulla_id', patrullaId);
+  if (error) throw error;
+}
+
+async function confirmDeletePatrulla(id) {
   initConfigModals();
   const p = getState().patrullas.find((x) => x.id === id);
   if (!p) return;
 
   pendingDeletePatrullaId = id;
-  const count = getState().miembros.filter((m) => m.patrulla_id === id).length;
+  const memberIds = await fetchMemberIdsByPatrulla(id);
+  const count = memberIds.length;
 
   document.getElementById('del-patrulla-title').textContent = `Eliminar "${p.nombre}"`;
   document.getElementById('del-patrulla-info').textContent = count
@@ -486,7 +521,6 @@ async function executeDeletePatrulla() {
   if (saving || pendingDeletePatrullaId == null) return;
   const id = pendingDeletePatrullaId;
   const mode = document.querySelector('input[name="del-patrulla-mode"]:checked')?.value || 'relocate';
-  const members = getState().miembros.filter((m) => m.patrulla_id === id);
 
   saving = true;
   const btn = document.getElementById('del-patrulla-confirm');
@@ -496,21 +530,15 @@ async function executeDeletePatrulla() {
   }
 
   try {
-    if (members.length && mode === 'delete-members') {
-      for (const m of members) {
-        const { error } = await window.supabase.from('miembros').update({ activo: false }).eq('id', m.id);
-        if (error) throw error;
+    if (mode === 'delete-members') {
+      await hardDeleteAllMiembrosInPatrulla(id);
+    } else {
+      const memberIds = await fetchMemberIdsByPatrulla(id);
+      if (memberIds.length) {
+        const target = await findOrCreateDefaultPatrulla(id);
+        await relocateAllMiembrosFromPatrulla(id, target.id);
+        toast(`Miembros movidos a "${target.nombre}"`);
       }
-    } else if (members.length && mode === 'relocate') {
-      const target = await findOrCreateDefaultPatrulla(id);
-      for (const m of members) {
-        const { error } = await window.supabase
-          .from('miembros')
-          .update({ patrulla_id: target.id, es_guia: false, es_subguia: false })
-          .eq('id', m.id);
-        if (error) throw error;
-      }
-      toast(`Miembros movidos a "${target.nombre}"`);
     }
 
     const { error: ptsErr } = await window.supabase.from('puntos_patrulla').delete().eq('patrulla_id', id);
@@ -681,9 +709,8 @@ async function saveMiembroModal() {
 
 function confirmDeleteMiembro(id) {
   const m = getState().miembros.find((x) => x.id === id);
-  openDeleteModal(`¿Eliminar a "${m?.nombre}"? Se ocultará de la lista (datos históricos se conservan).`, async () => {
-    const { error } = await window.supabase.from('miembros').update({ activo: false }).eq('id', id);
-    if (error) throw error;
+  openDeleteModal(`¿Eliminar permanentemente a "${m?.nombre}"? Se borrarán también sus puntos y asistencia.`, async () => {
+    await hardDeleteMiembros([id]);
     hideModal('modal-cfg-delete');
     toast('Miembro eliminado', 'warning');
     renderConfiguracion();
