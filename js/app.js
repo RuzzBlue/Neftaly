@@ -4,6 +4,7 @@ import { renderConfiguracion, initResetModal, initConfigModals } from './views/c
 import { renderReportes } from './views/reportes.js';
 import { renderLog } from './views/log.js';
 import { getCurrentCiclo } from './auth.js';
+import { initProfileModal } from './profile.js';
 import { showError } from './utils.js';
 
 const views = {
@@ -30,6 +31,7 @@ export async function initApp() {
     bindModals();
     initResetModal();
     initConfigModals();
+    initProfileModal();
     bindingsReady = true;
   }
 

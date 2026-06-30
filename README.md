@@ -16,6 +16,7 @@ En [Supabase Dashboard](https://supabase.com/dashboard) → **SQL Editor**, ejec
 4. Opcional: `supabase/003_backfill_profiles.sql` si creaste usuarios manualmente
 5. Opcional: `supabase/004_reset_troop_data.sql` para reinicio configurable
 6. Opcional: `supabase/005_leader_config_rls.sql` para que líderes cambien ciclo y editen patrullas
+7. Opcional: `supabase/006_profile_users.sql` para proteger cambios de rol propios
 
 ### 2. Usuarios de acceso
 

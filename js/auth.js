@@ -10,6 +10,24 @@ export function isAdmin() { return profile?.role === 'admin'; }
 export function isStaff() { return profile?.role === 'admin' || profile?.role === 'leader'; }
 export function canAccessConfig() { return isStaff(); }
 
+/** Etiquetas en español: leader → Admin, admin → Super Admin */
+export function roleLabel(role) {
+  if (role === 'admin') return 'Super Admin';
+  if (role === 'leader') return 'Admin';
+  return role || '';
+}
+
+export function updateUserDisplay() {
+  const p = profile;
+  const nameEl = document.getElementById('user-display-name');
+  if (nameEl && p) {
+    nameEl.textContent = p.nombre || p.email;
+    const roleEl = document.getElementById('user-display-role');
+    if (roleEl) roleEl.textContent = roleLabel(p.role);
+  }
+  document.getElementById('nav-config')?.classList.toggle('d-none', !canAccessConfig());
+}
+
 export function setOnAuthenticated(fn) {
   onAuthenticated = fn;
 }
@@ -98,10 +116,10 @@ async function loadProfile() {
   }
 
   profile = data;
-  const nameEl = document.getElementById('user-display-name');
-  if (nameEl) nameEl.textContent = data.nombre || data.email;
-  document.getElementById('nav-config')?.classList.toggle('d-none', !canAccessConfig());
+  updateUserDisplay();
 }
+
+export { loadProfile };
 
 async function onLogin(e) {
   e.preventDefault();

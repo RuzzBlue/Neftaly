@@ -60,7 +60,10 @@
       <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
     </div>
     <div class="offcanvas-body offcanvas-nav">
-      <p class="small text-muted mb-2" id="user-display-name"></p>
+      <div class="nav-user-block mb-3">
+        <p class="nav-user-name mb-0" id="user-display-name"></p>
+        <p class="nav-user-role mb-0" id="user-display-role"></p>
+      </div>
       <nav class="nav flex-column gap-1">
         <a class="nav-link active" href="#" data-view="resumen"><i class="fa-solid fa-house me-2"></i> Resumen</a>
         <a class="nav-link" href="#" data-view="asistencia"><i class="fa-solid fa-clipboard-check me-2"></i> Asistencia</a>
@@ -68,7 +71,11 @@
         <a class="nav-link" href="#" data-view="reportes"><i class="fa-solid fa-chart-bar me-2"></i> Reportes</a>
         <hr>
         <a class="nav-link" href="#" data-view="log"><i class="fa-solid fa-list me-2"></i> Registro</a>
-        <button class="btn btn-outline-secondary mt-3" id="btn-logout"><i class="fa-solid fa-right-from-bracket me-1"></i> Salir</button>
+        <button type="button" class="btn btn-outline-primary mt-3" id="btn-edit-profile">
+          <i class="fa-solid fa-user-pen me-1"></i> Editar cuenta
+          <i class="fa-solid fa-chevron-right ms-1 nav-btn-arrow"></i>
+        </button>
+        <button class="btn btn-outline-secondary mt-2" id="btn-logout"><i class="fa-solid fa-right-from-bracket me-1"></i> Salir</button>
       </nav>
     </div>
   </div>
@@ -333,6 +340,79 @@
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
         <button type="button" class="btn btn-danger" id="reset-submit" disabled>Confirmar reinicio</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal editar cuenta / usuarios -->
+<div class="modal fade" id="modal-profile" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header py-2">
+        <h5 class="modal-title">Editar cuenta</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <ul class="nav nav-tabs mb-3" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="profile-tab-mine" data-bs-toggle="tab" data-bs-target="#profile-pane-mine" type="button">Mi cuenta</button>
+          </li>
+          <li class="nav-item d-none" role="presentation" id="profile-tab-users-wrap">
+            <button class="nav-link" id="profile-tab-users" data-bs-toggle="tab" data-bs-target="#profile-pane-users" type="button">Usuarios</button>
+          </li>
+        </ul>
+        <div class="tab-content">
+          <div class="tab-pane fade show active" id="profile-pane-mine">
+            <div class="mb-3">
+              <label class="form-label" for="profile-nombre">Nombre</label>
+              <input type="text" class="form-control" id="profile-nombre" autocomplete="name">
+            </div>
+            <div class="mb-3">
+              <label class="form-label" for="profile-email">Correo</label>
+              <input type="email" class="form-control" id="profile-email" autocomplete="username">
+            </div>
+            <div class="mb-3">
+              <label class="form-label" for="profile-password">Nueva contraseña</label>
+              <input type="password" class="form-control" id="profile-password" autocomplete="new-password" placeholder="Dejar vacío para no cambiar">
+            </div>
+            <div class="mb-3">
+              <label class="form-label" for="profile-password2">Confirmar contraseña</label>
+              <input type="password" class="form-control" id="profile-password2" autocomplete="new-password">
+            </div>
+            <button type="button" class="btn btn-primary w-100" id="profile-save-mine">Guardar cambios</button>
+          </div>
+          <div class="tab-pane fade" id="profile-pane-users">
+            <p class="small text-muted">Solo Super Admin puede crear usuarios y cambiar roles.</p>
+            <div id="profile-users-list" class="mb-3"></div>
+            <hr>
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <h6 class="mb-0" id="profile-user-form-title">Nuevo usuario</h6>
+              <button type="button" class="btn btn-link btn-sm p-0 d-none" id="profile-user-new">+ Nuevo</button>
+            </div>
+            <input type="hidden" id="profile-user-id">
+            <div class="mb-2">
+              <label class="form-label small mb-0" for="profile-user-nombre">Nombre</label>
+              <input type="text" class="form-control form-control-sm" id="profile-user-nombre">
+            </div>
+            <div class="mb-2">
+              <label class="form-label small mb-0" for="profile-user-email">Correo</label>
+              <input type="email" class="form-control form-control-sm" id="profile-user-email">
+            </div>
+            <div class="mb-2" id="profile-user-password-wrap">
+              <label class="form-label small mb-0" for="profile-user-password">Contraseña</label>
+              <input type="password" class="form-control form-control-sm" id="profile-user-password" placeholder="Solo al crear">
+            </div>
+            <div class="mb-3">
+              <label class="form-label small mb-0" for="profile-user-role">Rol</label>
+              <select class="form-select form-select-sm" id="profile-user-role">
+                <option value="leader">Admin</option>
+                <option value="admin">Super Admin</option>
+              </select>
+            </div>
+            <button type="button" class="btn btn-primary btn-sm w-100" id="profile-save-user">Crear usuario</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
