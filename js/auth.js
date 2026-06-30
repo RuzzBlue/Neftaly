@@ -26,6 +26,12 @@ export function updateUserDisplay() {
     if (roleEl) roleEl.textContent = roleLabel(p.role);
   }
   document.getElementById('nav-config')?.classList.toggle('d-none', !canAccessConfig());
+
+  const profileBtn = document.getElementById('btn-edit-profile');
+  if (profileBtn && p) {
+    const label = isAdmin() ? 'Editar cuentas' : 'Editar cuenta';
+    profileBtn.innerHTML = `<i class="fa-solid fa-user-pen me-1"></i> ${label}<i class="fa-solid fa-chevron-right ms-1 nav-btn-arrow"></i>`;
+  }
 }
 
 export function setOnAuthenticated(fn) {

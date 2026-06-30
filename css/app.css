@@ -257,6 +257,15 @@ body {
   gap: 0.25rem;
 }
 
+.points-stepper .form-control {
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.points-stepper .btn {
+  min-width: 2.75rem;
+}
+
 .nav-btn-arrow {
   font-size: 0.75rem;
   opacity: 0.65;

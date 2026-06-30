@@ -5,6 +5,17 @@ import { escapeHtml, showError, toast } from './utils.js';
 
 let profileModalReady = false;
 let saving = false;
+let profileNoticeTimer = null;
+
+function showFreeTierNotice() {
+  const notice = document.getElementById('profile-free-tier-notice');
+  if (!notice) return;
+  notice.classList.remove('d-none');
+  if (profileNoticeTimer) clearTimeout(profileNoticeTimer);
+  profileNoticeTimer = setTimeout(() => {
+    notice.classList.add('d-none');
+  }, 10000);
+}
 
 export function initProfileModal() {
   if (profileModalReady) return;
@@ -62,6 +73,7 @@ export function openProfileModal() {
     resetAdminUserForm();
   }
 
+  showFreeTierNotice();
   showModal('modal-profile');
 }
 

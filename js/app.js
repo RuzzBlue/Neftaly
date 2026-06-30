@@ -58,6 +58,25 @@ function bindModals() {
   document.getElementById('pmb-submit')?.addEventListener('click', () => {
     submitMemberPointsModal().catch(showError);
   });
+  initPointsSteppers();
+}
+
+function initPointsSteppers() {
+  document.querySelectorAll('.points-step-down').forEach((btn) => {
+    btn.addEventListener('click', () => stepPointsInput(btn.dataset.target, -1));
+  });
+  document.querySelectorAll('.points-step-up').forEach((btn) => {
+    btn.addEventListener('click', () => stepPointsInput(btn.dataset.target, 1));
+  });
+}
+
+function stepPointsInput(inputId, delta) {
+  const el = document.getElementById(inputId);
+  if (!el) return;
+  let v = parseInt(el.value, 10);
+  if (Number.isNaN(v)) v = 0;
+  v = Math.max(1, v + delta);
+  el.value = String(v);
 }
 
 async function updateCicloBadge() {

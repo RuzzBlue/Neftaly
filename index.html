@@ -104,7 +104,15 @@
         </div>
         <div class="mb-3">
           <label class="form-label">Puntos</label>
-          <input type="number" class="form-control" id="ppt-cantidad" min="1" required>
+          <div class="input-group points-stepper">
+            <button type="button" class="btn btn-outline-secondary points-step-down" data-target="ppt-cantidad" aria-label="Menos puntos">
+              <i class="fa-solid fa-chevron-down"></i>
+            </button>
+            <input type="number" class="form-control text-center" id="ppt-cantidad" min="1" value="1" required>
+            <button type="button" class="btn btn-outline-secondary points-step-up" data-target="ppt-cantidad" aria-label="Más puntos">
+              <i class="fa-solid fa-chevron-up"></i>
+            </button>
+          </div>
         </div>
         <div class="mb-3">
           <label class="form-label">Nota (opcional)</label>
@@ -134,7 +142,15 @@
         </div>
         <div class="mb-3">
           <label class="form-label">Puntos</label>
-          <input type="number" class="form-control" id="pmb-cantidad" min="1" required>
+          <div class="input-group points-stepper">
+            <button type="button" class="btn btn-outline-secondary points-step-down" data-target="pmb-cantidad" aria-label="Menos puntos">
+              <i class="fa-solid fa-chevron-down"></i>
+            </button>
+            <input type="number" class="form-control text-center" id="pmb-cantidad" min="1" value="1" required>
+            <button type="button" class="btn btn-outline-secondary points-step-up" data-target="pmb-cantidad" aria-label="Más puntos">
+              <i class="fa-solid fa-chevron-up"></i>
+            </button>
+          </div>
         </div>
         <div class="mb-3">
           <label class="form-label">Nota (opcional)</label>
@@ -354,6 +370,9 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
+        <div id="profile-free-tier-notice" class="alert alert-warning small py-2 d-none mb-3" role="alert">
+          Cambios a nivel de usuario están limitados en la cuenta gratuita
+        </div>
         <ul class="nav nav-tabs mb-3" role="tablist">
           <li class="nav-item" role="presentation">
             <button class="nav-link active" id="profile-tab-mine" data-bs-toggle="tab" data-bs-target="#profile-pane-mine" type="button">Mi cuenta</button>

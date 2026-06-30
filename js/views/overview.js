@@ -64,7 +64,7 @@ function openPatrullaModal(mode) {
   modal.querySelector('.modal-title').textContent = isAdd ? 'Sumar puntos' : 'Restar puntos';
   modal.querySelector('#ppt-patrulla').innerHTML = patrullas
     .map((p) => `<option value="${p.id}">${escapeHtml(p.nombre)}</option>`).join('');
-  modal.querySelector('#ppt-cantidad').value = '';
+  modal.querySelector('#ppt-cantidad').value = '1';
   modal.querySelector('#ppt-nota').value = '';
   modal.dataset.mode = mode;
   bootstrap.Modal.getOrCreateInstance(modal).show();
@@ -184,7 +184,7 @@ function openMemberModal(mode, miembroId) {
   modal.querySelector('.modal-title').textContent = isAdd ? 'Sumar puntos personales' : 'Restar puntos personales';
   modal.querySelector('#pmb-area').innerHTML = AREAS
     .map((a) => `<option value="${a.key}">${a.label}</option>`).join('');
-  modal.querySelector('#pmb-cantidad').value = '';
+  modal.querySelector('#pmb-cantidad').value = '1';
   modal.querySelector('#pmb-nota').value = '';
   modal.dataset.mode = mode;
   modal.dataset.miembro = miembroId;
