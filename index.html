@@ -15,8 +15,10 @@
 <div id="login-screen" class="min-vh-100 d-flex align-items-center justify-content-center p-3">
   <div class="card shadow-sm w-100" style="max-width:400px">
     <div class="card-body p-4">
-      <h1 class="h4 text-center mb-1"><i class="fa-solid fa-campground text-primary"></i> Neftaly</h1>
-      <p class="text-center text-muted small mb-4">Gestión de tropa</p>
+      <div class="text-center mb-3">
+        <img src="neftaly.png" alt="Neftaly" class="login-logo">
+        <p class="text-muted small mb-0 mt-2">Gestión de tropa</p>
+      </div>
       <form id="login-form">
         <div class="mb-3">
           <label class="form-label" for="login-email">Correo</label>
@@ -44,7 +46,10 @@
       <button class="btn btn-link text-white px-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvas-nav">
         <i class="fa-solid fa-bars fa-lg"></i>
       </button>
-      <span class="navbar-brand mx-auto">Neftaly</span>
+      <span class="navbar-brand mx-auto d-flex align-items-center gap-2">
+        <img src="neftaly-transparent.png" alt="" class="navbar-logo" aria-hidden="true">
+        Neftaly
+      </span>
       <span class="badge bg-light text-primary" id="ciclo-badge">Ciclo 2</span>
     </div>
   </nav>

@@ -15,6 +15,7 @@ En [Supabase Dashboard](https://supabase.com/dashboard) → **SQL Editor**, ejec
 3. `supabase/002_seed.sql` (datos de patrullas; ajusta roles al final con tus emails)
 4. Opcional: `supabase/003_backfill_profiles.sql` si creaste usuarios manualmente
 5. Opcional: `supabase/004_reset_troop_data.sql` para reinicio configurable
+6. Opcional: `supabase/005_leader_config_rls.sql` para que líderes cambien ciclo y editen patrullas
 
 ### 2. Usuarios de acceso
 
@@ -53,13 +54,18 @@ Visita http://localhost:3000
 ### 5. GitHub Pages
 
 1. Repo: https://github.com/RuzzBlue/Neftaly
-2. **Settings → Pages → Deploy from branch → main / root**
+2. **Settings → Pages → Build and deployment → Source:** choose **GitHub Actions** (not “Deploy from a branch”)
+3. Push to `main` — the workflow `.github/workflows/pages.yml` publishes the site automatically
+4. First deploy: open the **Actions** tab, confirm **Deploy GitHub Pages** finished green
+5. Live URL: **https://ruzzblue.github.io/Neftaly/**
+
+If the site stays 404: check **Settings → Pages** shows a green “Your site is live at…”, and that the repo is **Public** (or Pages is enabled for your plan on private repos).
 
 ## Funciones
 
 - **Resumen:** puntos de patrullas, detalle por miembro y bitácora
 - **Asistencia:** registro por sábado; 3 ausencias seguidas → *en lista*
-- **Configuración** (solo admin): ciclos 1–3, patrullas, miembros, cargos, reinicio de tropa
+- **Configuración** (admin completo; líderes: ciclo, editar patrullas/miembros, ver cargos): ciclos 1–3, patrullas, miembros, cargos, reinicio de tropa (solo admin)
 - **Reportes** y **Registro** de acciones (puntos y asistencia)
 
 ## Ciclos

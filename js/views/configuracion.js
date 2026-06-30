@@ -1,5 +1,5 @@
 import { refreshData, getState, resetTroopData, getCargoNames, isAdmin } from '../data.js';
-import { setCurrentCiclo } from '../auth.js';
+import { setCurrentCiclo, canAccessConfig } from '../auth.js';
 import { CICLOS } from '../constants.js';
 import { escapeHtml, showError, toast } from '../utils.js';
 
@@ -20,10 +20,11 @@ const CARGO_TAG_SUBGUIA = '__subguia__';
 let memberFilters = { search: '', patrullaId: '', cargoTags: [] };
 
 export async function renderConfiguracion() {
-  if (!isAdmin()) return;
+  if (!canAccessConfig()) return;
   await refreshData();
   const el = document.getElementById('view-config');
   const { patrullas, miembros, cargos, ciclo } = getState();
+  const admin = isAdmin();
 
   el.innerHTML = `
     <h5 class="mb-3">Configuración</h5>
@@ -41,17 +42,17 @@ export async function renderConfiguracion() {
     <div class="card mb-3">
       <div class="card-header d-flex justify-content-between align-items-center">
         <span>Patrullas</span>
-        <button class="btn btn-sm btn-primary" id="cfg-add-patrulla"><i class="fa-solid fa-plus me-1"></i>Nueva</button>
+        ${admin ? '<button class="btn btn-sm btn-primary" id="cfg-add-patrulla"><i class="fa-solid fa-plus me-1"></i>Nueva</button>' : ''}
       </div>
       <ul class="list-group list-group-flush">
-        ${patrullas.map((p) => cfgPatrullaRow(p)).join('') || '<li class="list-group-item text-muted">Sin patrullas</li>'}
+        ${patrullas.map((p) => cfgPatrullaRow(p, admin)).join('') || '<li class="list-group-item text-muted">Sin patrullas</li>'}
       </ul>
     </div>
 
     <div class="card mb-3">
       <div class="card-header d-flex justify-content-between align-items-center">
         <span>Miembros <span class="badge bg-secondary ms-1" id="cfg-miembros-count"></span></span>
-        <button class="btn btn-sm btn-primary" id="cfg-add-miembro"><i class="fa-solid fa-plus me-1"></i>Nuevo</button>
+        ${admin ? '<button class="btn btn-sm btn-primary" id="cfg-add-miembro"><i class="fa-solid fa-plus me-1"></i>Nuevo</button>' : ''}
       </div>
       <div class="card-body pb-2">
         <div class="cfg-member-filters">
@@ -103,18 +104,19 @@ export async function renderConfiguracion() {
     <div class="card mb-3">
       <div class="card-header d-flex justify-content-between align-items-center">
         <span>Cargos de patrulla</span>
-        <button class="btn btn-sm btn-primary" id="cfg-add-cargo"><i class="fa-solid fa-plus me-1"></i>Nuevo</button>
+        ${admin ? '<button class="btn btn-sm btn-primary" id="cfg-add-cargo"><i class="fa-solid fa-plus me-1"></i>Nuevo</button>' : ''}
       </div>
       <ul class="list-group list-group-flush">
-        ${cargos.map((c) => cfgCargoRow(c)).join('') || '<li class="list-group-item text-muted">Sin cargos</li>'}
+        ${cargos.map((c) => cfgCargoRow(c, admin)).join('') || '<li class="list-group-item text-muted">Sin cargos</li>'}
       </ul>
     </div>
 
+    ${admin ? `
     <div class="danger-zone">
       <h6 class="text-danger"><i class="fa-solid fa-triangle-exclamation"></i> Zona peligrosa — nuevo año</h6>
       <p class="small mb-2">Reinicia puntos y ciclo para un año nuevo. Elige qué conservar antes de confirmar.</p>
       <button class="btn btn-danger btn-sm" id="btn-clear-all">Reiniciar tropa…</button>
-    </div>`;
+    </div>` : ''}`;
 
   el.querySelectorAll('[data-ciclo]').forEach((btn) => {
     btn.onclick = async () => {
@@ -124,10 +126,10 @@ export async function renderConfiguracion() {
     };
   });
 
-  document.getElementById('cfg-add-patrulla').onclick = () => openPatrullaModal(null);
-  document.getElementById('cfg-add-miembro').onclick = () => openMiembroModal(null);
-  document.getElementById('cfg-add-cargo').onclick = () => openCargoModal(null);
-  document.getElementById('btn-clear-all').onclick = openResetTroopModal;
+  document.getElementById('cfg-add-patrulla')?.addEventListener('click', () => openPatrullaModal(null));
+  document.getElementById('cfg-add-miembro')?.addEventListener('click', () => openMiembroModal(null));
+  document.getElementById('cfg-add-cargo')?.addEventListener('click', () => openCargoModal(null));
+  document.getElementById('btn-clear-all')?.addEventListener('click', openResetTroopModal);
 
   bindMemberFilters();
   renderMembersTableBody();
@@ -146,12 +148,12 @@ export async function renderConfiguracion() {
   });
 }
 
-function cfgPatrullaRow(p) {
+function cfgPatrullaRow(p, admin = isAdmin()) {
   return `<li class="list-group-item d-flex justify-content-between align-items-center">
     <span><span class="color-swatch me-2" style="background:${escapeHtml(p.color)}"></span>${escapeHtml(p.nombre)}</span>
     <span class="cfg-list-actions">
       <button type="button" class="btn btn-sm btn-outline-secondary cfg-edit-patrulla" data-id="${p.id}" title="Editar"><i class="fa-solid fa-pen"></i></button>
-      <button type="button" class="btn btn-sm btn-outline-danger cfg-del-patrulla" data-id="${p.id}" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
+      ${admin ? `<button type="button" class="btn btn-sm btn-outline-danger cfg-del-patrulla" data-id="${p.id}" title="Eliminar"><i class="fa-solid fa-trash"></i></button>` : ''}
     </span>
   </li>`;
 }
@@ -245,6 +247,7 @@ function renderMembersTableBody() {
 
   tbody.innerHTML = filtered.map((m) => {
     const pat = patrullas.find((p) => p.id === m.patrulla_id);
+    const admin = isAdmin();
     return `<tr>
       <td class="fw-semibold">${escapeHtml(m.nombre)}</td>
       <td>
@@ -254,7 +257,7 @@ function renderMembersTableBody() {
       <td class="cfg-cargos-cell">${formatMemberCargoBadges(m)}</td>
       <td class="text-end cfg-list-actions">
         <button type="button" class="btn btn-sm btn-outline-secondary cfg-edit-miembro" data-id="${m.id}" title="Editar"><i class="fa-solid fa-pen"></i></button>
-        <button type="button" class="btn btn-sm btn-outline-danger cfg-del-miembro" data-id="${m.id}" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
+        ${admin ? `<button type="button" class="btn btn-sm btn-outline-danger cfg-del-miembro" data-id="${m.id}" title="Eliminar"><i class="fa-solid fa-trash"></i></button>` : ''}
       </td>
     </tr>`;
   }).join('');
@@ -287,7 +290,10 @@ function bindMemberFilters() {
   });
 }
 
-function cfgCargoRow(c) {
+function cfgCargoRow(c, admin = isAdmin()) {
+  if (!admin) {
+    return `<li class="list-group-item">${escapeHtml(c.nombre)}</li>`;
+  }
   return `<li class="list-group-item d-flex justify-content-between align-items-center">
     <span>${escapeHtml(c.nombre)}</span>
     <span class="cfg-list-actions">
@@ -391,6 +397,7 @@ function hideModal(id) {
 // ─── Patrulla ──────────────────────────────────────────────
 
 function openPatrullaModal(id) {
+  if (id == null && !isAdmin()) return;
   initConfigModals();
   const isEdit = id != null;
   const p = isEdit ? getState().patrullas.find((x) => x.id === id) : null;
@@ -407,10 +414,12 @@ function openPatrullaModal(id) {
 
 async function savePatrullaModal() {
   if (saving) return;
+  const id = document.getElementById('cfg-patrulla-id').value;
+  if (!id && !isAdmin()) return showError(new Error('No autorizado'));
+
   const nombre = document.getElementById('cfg-patrulla-nombre').value.trim();
   let color = document.getElementById('cfg-patrulla-color-hex').value.trim();
   if (!color.startsWith('#')) color = `#${color}`;
-  const id = document.getElementById('cfg-patrulla-id').value;
 
   if (!nombre) return showError(new Error('El nombre es obligatorio'));
   if (!/^#[0-9A-Fa-f]{6}$/.test(color)) return showError(new Error('Color inválido (usa #RRGGBB)'));
@@ -468,6 +477,7 @@ async function relocateAllMiembrosFromPatrulla(patrullaId, targetId) {
 }
 
 async function confirmDeletePatrulla(id) {
+  if (!isAdmin()) return;
   initConfigModals();
   const p = getState().patrullas.find((x) => x.id === id);
   if (!p) return;
@@ -563,14 +573,19 @@ async function executeDeletePatrulla() {
 // ─── Miembro ───────────────────────────────────────────────
 
 function openMiembroModal(id) {
+  if (id == null && !isAdmin()) return;
   initConfigModals();
   const isEdit = id != null;
+  const leaderEdit = isEdit && !isAdmin();
   const m = isEdit ? getState().miembros.find((x) => x.id === id) : null;
   const { patrullas, cargos, miembroCargos } = getState();
 
   document.getElementById('modal-cfg-miembro-title').textContent = isEdit ? 'Editar miembro' : 'Nuevo miembro';
   document.getElementById('cfg-miembro-id').value = isEdit ? id : '';
-  document.getElementById('cfg-miembro-nombre').value = m?.nombre || '';
+  const nombreEl = document.getElementById('cfg-miembro-nombre');
+  nombreEl.value = m?.nombre || '';
+  nombreEl.readOnly = leaderEdit;
+  nombreEl.classList.toggle('bg-light', leaderEdit);
   document.getElementById('cfg-miembro-patrulla').innerHTML = patrullas
     .map((p) => `<option value="${p.id}">${escapeHtml(p.nombre)}</option>`).join('');
   if (m) document.getElementById('cfg-miembro-patrulla').value = String(m.patrulla_id);
@@ -667,11 +682,18 @@ async function syncMiembroCargos(miembroId, selectedIds, patrullaId) {
 
 async function saveMiembroModal() {
   if (saving) return;
-  const nombre = document.getElementById('cfg-miembro-nombre').value.trim();
+  const idVal = document.getElementById('cfg-miembro-id').value;
+  if (!idVal && !isAdmin()) return showError(new Error('No autorizado'));
+
+  const existing = idVal
+    ? getState().miembros.find((x) => x.id === parseInt(idVal, 10))
+    : null;
+  const nombre = (!isAdmin() && existing)
+    ? existing.nombre
+    : document.getElementById('cfg-miembro-nombre').value.trim();
   const patrulla_id = parseInt(document.getElementById('cfg-miembro-patrulla').value, 10);
   const es_guia = document.getElementById('cfg-miembro-guia').checked;
   const es_subguia = document.getElementById('cfg-miembro-subguia').checked;
-  const idVal = document.getElementById('cfg-miembro-id').value;
   const cargoIds = [...document.querySelectorAll('.cfg-cargo-check:checked')].map((el) => parseInt(el.value, 10));
 
   if (!nombre) return showError(new Error('El nombre es obligatorio'));
@@ -708,6 +730,7 @@ async function saveMiembroModal() {
 }
 
 function confirmDeleteMiembro(id) {
+  if (!isAdmin()) return;
   const m = getState().miembros.find((x) => x.id === id);
   openDeleteModal(`¿Eliminar permanentemente a "${m?.nombre}"? Se borrarán también sus puntos y asistencia.`, async () => {
     await hardDeleteMiembros([id]);
@@ -720,6 +743,7 @@ function confirmDeleteMiembro(id) {
 // ─── Cargo ─────────────────────────────────────────────────
 
 function openCargoModal(id) {
+  if (!isAdmin()) return;
   initConfigModals();
   const isEdit = id != null;
   const c = isEdit ? getState().cargos.find((x) => x.id === id) : null;
@@ -730,7 +754,7 @@ function openCargoModal(id) {
 }
 
 async function saveCargoModal() {
-  if (saving) return;
+  if (saving || !isAdmin()) return;
   const nombre = document.getElementById('cfg-cargo-nombre').value.trim();
   const idVal = document.getElementById('cfg-cargo-id').value;
 
@@ -755,6 +779,7 @@ async function saveCargoModal() {
 }
 
 function confirmDeleteCargo(id) {
+  if (!isAdmin()) return;
   const c = getState().cargos.find((x) => x.id === id);
   openDeleteModal(`¿Eliminar el cargo "${c?.nombre}"? Se quitará de quienes lo tengan asignado.`, async () => {
     const { error } = await window.supabase.from('cargos').delete().eq('id', id);
@@ -843,6 +868,7 @@ export function initResetModal() {
 }
 
 export function openResetTroopModal() {
+  if (!isAdmin()) return;
   initResetModal();
   document.getElementById('reset-confirm-text').value = '';
   document.getElementById('reset-keep-patrullas').checked = false;

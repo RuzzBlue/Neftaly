@@ -13,6 +13,18 @@ body {
 
 .navbar-brand { font-weight: 700; letter-spacing: 0.02em; }
 
+.login-logo {
+  max-width: 220px;
+  width: 100%;
+  height: auto;
+}
+
+.navbar-logo {
+  height: 1.75rem;
+  width: auto;
+  object-fit: contain;
+}
+
 .patrulla-card {
   border: none;
   border-radius: 0.75rem;

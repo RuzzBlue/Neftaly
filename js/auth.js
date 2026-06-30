@@ -7,6 +7,8 @@ let loginInProgress = false;
 
 export function getProfile() { return profile; }
 export function isAdmin() { return profile?.role === 'admin'; }
+export function isStaff() { return profile?.role === 'admin' || profile?.role === 'leader'; }
+export function canAccessConfig() { return isStaff(); }
 
 export function setOnAuthenticated(fn) {
   onAuthenticated = fn;
@@ -98,7 +100,7 @@ async function loadProfile() {
   profile = data;
   const nameEl = document.getElementById('user-display-name');
   if (nameEl) nameEl.textContent = data.nombre || data.email;
-  document.getElementById('nav-config')?.classList.toggle('d-none', !isAdmin());
+  document.getElementById('nav-config')?.classList.toggle('d-none', !canAccessConfig());
 }
 
 async function onLogin(e) {
