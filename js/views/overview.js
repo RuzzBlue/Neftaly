@@ -131,7 +131,7 @@ function applyPatrullaModalChrome(mode) {
   const isAdd = mode === 'add';
   const header = modal.querySelector('.modal-header');
   header.className = `modal-header ${isAdd ? 'add-points' : 'sub-points'}`;
-  document.getElementById('ppt-modal-title').textContent = isAdd ? 'Sumar puntos' : 'Restar puntos';
+  document.getElementById('ppt-modal-title').textContent = isAdd ? 'Sumar' : 'Restar';
   document.getElementById('ppt-to-sub')?.classList.toggle('d-none', !isAdd);
   document.getElementById('ppt-to-add')?.classList.toggle('d-none', isAdd);
   modal.dataset.mode = mode;
@@ -142,9 +142,7 @@ function applyMemberModalChrome(mode) {
   const isAdd = mode === 'add';
   const header = modal.querySelector('.modal-header');
   header.className = `modal-header ${isAdd ? 'add-points' : 'sub-points'}`;
-  document.getElementById('pmb-modal-title').textContent = isAdd
-    ? 'Añadir progresión'
-    : 'Quitar progresión';
+  document.getElementById('pmb-modal-title').textContent = isAdd ? 'Añadir' : 'Quitar';
   document.getElementById('pmb-to-sub')?.classList.toggle('d-none', !isAdd);
   document.getElementById('pmb-to-add')?.classList.toggle('d-none', isAdd);
   modal.dataset.mode = mode;

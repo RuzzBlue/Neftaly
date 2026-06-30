@@ -59,45 +59,43 @@ body {
   text-decoration: underline;
 }
 
-.modal-header {
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.modal-header-main {
-  display: flex;
+.modal-header-points {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
   gap: 0.5rem;
-  flex: 1;
+  padding-top: 0.85rem;
+  padding-bottom: 0.85rem;
+}
+
+.modal-header-slot {
+  display: flex;
+  align-items: center;
   min-width: 0;
 }
 
-.modal-header-main .modal-title {
-  flex-shrink: 0;
+.modal-header-left {
+  justify-self: start;
+}
+
+.modal-header-right {
+  justify-self: end;
+}
+
+.modal-header-center {
+  justify-self: center;
+  text-align: center;
+  font-weight: 700;
+  pointer-events: none;
 }
 
 .modal-mode-switch {
   white-space: nowrap;
   font-size: 0.875rem;
   font-weight: 600;
-  padding: 0.35rem 0.75rem;
-  border-width: 2px;
-  flex-shrink: 0;
-}
-
-.modal-header.add-points .modal-mode-switch.btn-points-sub,
-.modal-header.sub-points .modal-mode-switch.btn-points-add {
-  background: rgba(255, 255, 255, 0.95);
-}
-
-.modal-header.add-points .modal-mode-switch.btn-points-sub {
-  color: var(--neftaly-red);
-  border-color: var(--neftaly-red);
-}
-
-.modal-header.sub-points .modal-mode-switch.btn-points-add {
-  color: var(--neftaly-green);
-  border-color: var(--neftaly-green);
+  padding: 0.4rem 0.75rem;
+  border: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
 }
 
 .patrulla-card {
