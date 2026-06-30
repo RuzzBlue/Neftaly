@@ -60,11 +60,10 @@ body {
 }
 
 .modal-header.modal-header-points {
-  display: flex !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
-  justify-content: flex-start;
-  position: relative;
-  gap: 0;
+  gap: 0.5rem;
   padding-top: 0.85rem;
   padding-bottom: 0.85rem;
 }
@@ -72,31 +71,24 @@ body {
 .modal-header-points .modal-header-slot {
   display: flex;
   align-items: center;
-  flex: 0 0 auto;
-  z-index: 2;
 }
 
 .modal-header-points .modal-header-left {
-  margin-right: auto;
+  justify-self: start;
 }
 
 .modal-header-points .modal-header-right {
-  margin-left: auto;
+  justify-self: end;
 }
 
 .modal-header-points .modal-header-center {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
+  justify-self: center;
+  grid-column: 2;
   margin: 0 !important;
   padding: 0;
-  width: max-content;
-  max-width: calc(100% - 10rem);
   text-align: center;
   font-weight: 700;
-  pointer-events: none;
-  z-index: 1;
+  white-space: nowrap;
 }
 
 .modal-mode-switch {
