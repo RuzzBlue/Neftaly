@@ -25,6 +25,34 @@ body {
   object-fit: contain;
 }
 
+.ciclo-badge {
+  font-size: 0.95rem;
+  font-weight: 700;
+  padding: 0.45em 0.75em;
+  letter-spacing: 0.02em;
+}
+
+.resumen-breadcrumb {
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.resumen-breadcrumb .btn-link {
+  text-decoration: none;
+  vertical-align: baseline;
+}
+
+.resumen-breadcrumb .btn-link:hover {
+  text-decoration: underline;
+}
+
+.modal-header .btn-points-sub,
+.modal-header .btn-points-add {
+  white-space: nowrap;
+  font-size: 0.8rem;
+  padding: 0.25rem 0.5rem;
+}
+
 .patrulla-card {
   border: none;
   border-radius: 0.75rem;

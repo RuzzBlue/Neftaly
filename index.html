@@ -48,9 +48,9 @@
       </button>
       <span class="navbar-brand mx-auto d-flex align-items-center gap-2">
         <img src="neftaly-transparent.png" alt="" class="navbar-logo" aria-hidden="true">
-        Neftaly
+        <span id="navbar-title-text">Neftaly</span>
       </span>
-      <span class="badge bg-light text-primary" id="ciclo-badge">Ciclo 2</span>
+      <span class="badge bg-light text-primary ciclo-badge" id="ciclo-badge">Ciclo 2</span>
     </div>
   </nav>
 
@@ -94,7 +94,15 @@
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header add-points">
-        <h5 class="modal-title">Puntos patrulla</h5>
+        <div class="d-flex align-items-center flex-grow-1 gap-2 pe-2">
+          <h5 class="modal-title mb-0" id="ppt-modal-title">Sumar puntos</h5>
+          <button type="button" class="btn btn-sm btn-points-sub ms-auto" id="ppt-to-sub">
+            Restar <i class="fa-solid fa-chevron-right"></i>
+          </button>
+          <button type="button" class="btn btn-sm btn-points-add ms-auto d-none" id="ppt-to-add">
+            <i class="fa-solid fa-chevron-left"></i> Sumar
+          </button>
+        </div>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
@@ -132,7 +140,15 @@
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header add-points">
-        <h5 class="modal-title">Puntos personales</h5>
+        <div class="d-flex align-items-center flex-grow-1 gap-2 pe-2">
+          <h5 class="modal-title mb-0" id="pmb-modal-title">Sumar puntos personales</h5>
+          <button type="button" class="btn btn-sm btn-points-sub ms-auto" id="pmb-to-sub">
+            Restar <i class="fa-solid fa-chevron-right"></i>
+          </button>
+          <button type="button" class="btn btn-sm btn-points-add ms-auto d-none" id="pmb-to-add">
+            <i class="fa-solid fa-chevron-left"></i> Sumar
+          </button>
+        </div>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">

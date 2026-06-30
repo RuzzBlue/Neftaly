@@ -121,3 +121,8 @@ export function escapeHtml(s) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
 }
+
+export function setNavbarTitle(text) {
+  const el = document.getElementById('navbar-title-text');
+  if (el) el.textContent = text;
+}

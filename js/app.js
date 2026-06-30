@@ -1,11 +1,10 @@
-import { renderOverview, submitPatrullaPointsModal, submitMemberPointsModal } from './views/overview.js';
-import { renderAsistencia } from './views/asistencia.js';
-import { renderConfiguracion, initResetModal, initConfigModals } from './views/configuracion.js';
+import { renderOverview, submitPatrullaPointsModal, submitMemberPointsModal, initPointsModalSwitches } from './views/overview.js';
+import { renderAsistencia } from './views/asistencia.js';import { renderConfiguracion, initResetModal, initConfigModals } from './views/configuracion.js';
 import { renderReportes } from './views/reportes.js';
 import { renderLog } from './views/log.js';
 import { getCurrentCiclo } from './auth.js';
 import { initProfileModal } from './profile.js';
-import { showError } from './utils.js';
+import { showError, setNavbarTitle } from './utils.js';
 
 const views = {
   resumen: { render: renderOverview, el: 'view-resumen' },
@@ -59,6 +58,7 @@ function bindModals() {
     submitMemberPointsModal().catch(showError);
   });
   initPointsSteppers();
+  initPointsModalSwitches();
 }
 
 function initPointsSteppers() {
@@ -94,6 +94,7 @@ export async function navigate(name) {
     a.classList.toggle('active', a.dataset.view === name);
   });
   try {
+    if (name !== 'resumen') setNavbarTitle('Neftaly');
     await views[name].render();
     await updateCicloBadge();
   } catch (err) {
