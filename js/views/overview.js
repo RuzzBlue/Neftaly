@@ -18,13 +18,39 @@ export async function renderOverview() {
 }
 
 function renderBreadcrumb(items) {
-  return `<nav class="resumen-breadcrumb mb-3" aria-label="Ubicación">${items.map((item, i) => {
+  return `<nav class="resumen-breadcrumb" aria-label="Ubicación">${items.map((item, i) => {
     const sep = i > 0 ? ' <span class="text-muted mx-1">&gt;</span> ' : '';
     if (item.current) {
       return `${sep}<span class="fw-bold">${escapeHtml(item.label)}</span>`;
     }
     return `${sep}<button type="button" class="btn btn-link btn-sm p-0 resumen-crumb" data-crumb="${i}">${escapeHtml(item.label)}</button>`;
   }).join('')}</nav>`;
+}
+
+function renderSubnav({ backLabel, crumbs }) {
+  return `<div class="resumen-subnav d-flex align-items-start justify-content-between mb-3">
+    <button type="button" class="btn btn-outline-secondary btn-sm resumen-back-btn" id="btn-resumen-back">
+      <i class="fa-solid fa-arrow-left me-1"></i>${escapeHtml(backLabel)}
+    </button>
+    ${renderBreadcrumb(crumbs)}
+  </div>`;
+}
+
+function bindSubnav(container, backAction, crumbHandlers) {
+  container.querySelector('#btn-resumen-back')?.addEventListener('click', backAction);
+  bindBreadcrumbs(container, crumbHandlers);
+}
+
+function formatMemberBadges(m) {
+  const parts = [];
+  if (m.es_guia) parts.push('<span class="badge badge-guia">Guía</span>');
+  if (m.es_subguia) parts.push('<span class="badge badge-subguia">Subguía</span>');
+  getCargoNames(m.id).forEach((c) => {
+    parts.push(`<span class="badge bg-secondary">${escapeHtml(c)}</span>`);
+  });
+  return parts.length
+    ? `<span class="member-title-badges">${parts.join('')}</span>`
+    : '';
 }
 
 function bindBreadcrumbs(container, handlers) {
@@ -44,6 +70,15 @@ function adjacentMemberId(currentId, delta) {
   const m = getState().miembros.find((x) => x.id === currentId);
   if (!m) return currentId;
   const ids = patrullaMemberIds(m.patrulla_id);
+  if (!ids.length) return currentId;
+  const idx = ids.indexOf(currentId);
+  const next = (idx + delta + ids.length) % ids.length;
+  return ids[next];
+}
+
+function adjacentPatrullaId(currentId, delta) {
+  const { patrullas } = getState();
+  const ids = patrullas.map((p) => p.id);
   if (!ids.length) return currentId;
   const idx = ids.indexOf(currentId);
   const next = (idx + delta + ids.length) % ids.length;
@@ -108,8 +143,8 @@ function applyMemberModalChrome(mode) {
   const header = modal.querySelector('.modal-header');
   header.className = `modal-header ${isAdd ? 'add-points' : 'sub-points'}`;
   document.getElementById('pmb-modal-title').textContent = isAdd
-    ? 'Sumar puntos personales'
-    : 'Restar puntos personales';
+    ? 'Añadir progresión'
+    : 'Quitar progresión';
   document.getElementById('pmb-to-sub')?.classList.toggle('d-none', !isAdd);
   document.getElementById('pmb-to-add')?.classList.toggle('d-none', isAdd);
   modal.dataset.mode = mode;
@@ -177,25 +212,29 @@ function showPatrullaDetail(patrullaId) {
     </div>`;
 
   const list = members.map((m) => {
-    const badges = [];
-    if (m.es_guia) badges.push('<span class="badge badge-guia me-1">Guía</span>');
-    if (m.es_subguia) badges.push('<span class="badge badge-subguia me-1">Subguía</span>');
-    getCargoNames(m.id).forEach((c) => badges.push(`<span class="badge bg-secondary me-1">${escapeHtml(c)}</span>`));
+    const badges = formatMemberBadges(m);
     return `<div class="member-row" data-member="${m.id}">
-      <span>${escapeHtml(m.nombre)} ${badges.join('')}</span>
+      <span>${escapeHtml(m.nombre)} ${badges}</span>
       <i class="fa-solid fa-chevron-right text-muted"></i>
     </div>`;
   }).join('');
 
+  const showPatNav = patrullas.length > 1;
+
   const el = document.getElementById('view-resumen');
   el.innerHTML = `
-    ${renderBreadcrumb([
-      { label: 'Resumen' },
-      { label: p.nombre, current: true },
-    ])}
+    ${renderSubnav({
+      backLabel: 'Volver',
+      crumbs: [
+        { label: 'Resumen' },
+        { label: p.nombre, current: true },
+      ],
+    })}
     <div class="d-flex align-items-center gap-2 mb-2">
+      ${showPatNav ? `<button type="button" class="btn btn-outline-secondary btn-sm" id="btn-patrulla-prev" aria-label="Patrulla anterior"><i class="fa-solid fa-chevron-left"></i></button>` : ''}
       <span class="color-swatch" style="background:${escapeHtml(p.color)}"></span>
-      <h4 class="mb-0">${escapeHtml(p.nombre)}</h4>
+      <h4 class="mb-0 flex-grow-1">${escapeHtml(p.nombre)}</h4>
+      ${showPatNav ? `<button type="button" class="btn btn-outline-secondary btn-sm" id="btn-patrulla-next" aria-label="Siguiente patrulla"><i class="fa-solid fa-chevron-right"></i></button>` : ''}
     </div>
     <p class="text-muted small mb-2">Ciclo ${ciclo} · ${patrullaPoints(patrullaId)} pts patrulla</p>
     <h6 class="mb-1">Áreas de crecimiento (total patrulla)</h6>
@@ -203,9 +242,18 @@ function showPatrullaDetail(patrullaId) {
     <h6 class="mt-2 mb-2">Miembros</h6>
     <div class="bg-white rounded p-2">${list || '<p class="text-muted mb-0">Sin miembros</p>'}</div>`;
 
-  bindBreadcrumbs(el, [
+  bindSubnav(el, () => { stack = ['list']; renderList(); }, [
     () => { stack = ['list']; renderList(); },
   ]);
+
+  if (showPatNav) {
+    el.querySelector('#btn-patrulla-prev').onclick = () => {
+      showPatrullaDetail(adjacentPatrullaId(patrullaId, -1));
+    };
+    el.querySelector('#btn-patrulla-next').onclick = () => {
+      showPatrullaDetail(adjacentPatrullaId(patrullaId, 1));
+    };
+  }
 
   el.querySelectorAll('.member-row').forEach((row) => {
     row.onclick = () => showMemberDetail(parseInt(row.dataset.member, 10));
@@ -225,28 +273,39 @@ function showMemberDetail(miembroId) {
 
   const memberIds = patrullaMemberIds(m.patrulla_id);
   const showNav = memberIds.length > 1;
+  const badges = formatMemberBadges(m);
 
   const el = document.getElementById('view-resumen');
   el.innerHTML = `
-    ${renderBreadcrumb([
-      { label: 'Resumen' },
-      { label: pat?.nombre || 'Patrulla' },
-      { label: m.nombre, current: true },
-    ])}
+    ${renderSubnav({
+      backLabel: 'Volver',
+      crumbs: [
+        { label: 'Resumen' },
+        { label: pat?.nombre || 'Patrulla' },
+        { label: m.nombre, current: true },
+      ],
+    })}
     <div class="d-grid grid-cols-2 gap-2 mb-3" style="grid-template-columns:1fr 1fr;display:grid;">
-      <button class="btn btn-points-add" id="btn-add-member-pts"><i class="fa-solid fa-plus"></i> Sumar</button>
-      <button class="btn btn-points-sub" id="btn-sub-member-pts"><i class="fa-solid fa-minus"></i> Restar</button>
+      <button class="btn btn-points-add" id="btn-add-member-pts"><i class="fa-solid fa-plus"></i> Añadir</button>
+      <button class="btn btn-points-sub" id="btn-sub-member-pts"><i class="fa-solid fa-minus"></i> Quitar</button>
     </div>
     <div class="d-flex align-items-center gap-2 mb-2">
       ${showNav ? `<button type="button" class="btn btn-outline-secondary btn-sm" id="btn-member-prev" aria-label="Explorador anterior"><i class="fa-solid fa-chevron-left"></i></button>` : ''}
-      <h4 class="mb-0 flex-grow-1">${escapeHtml(m.nombre)}</h4>
+      <div class="flex-grow-1 min-width-0">
+        <h4 class="mb-0 member-title-row">
+          <span>${escapeHtml(m.nombre)}</span>${badges}
+        </h4>
+      </div>
       ${showNav ? `<button type="button" class="btn btn-outline-secondary btn-sm" id="btn-member-next" aria-label="Siguiente explorador"><i class="fa-solid fa-chevron-right"></i></button>` : ''}
     </div>
     <p class="text-muted">${escapeHtml(pat?.nombre || '')} · Ciclo ${ciclo}</p>
-    <h6>Bitácora — áreas de crecimiento</h6>
+    <h6>Progresión personal — áreas de crecimiento</h6>
     ${areaHtml}`;
 
-  bindBreadcrumbs(el, [
+  bindSubnav(el, () => {
+    stack.pop();
+    showPatrullaDetail(m.patrulla_id);
+  }, [
     () => { stack = ['list']; renderList(); },
     () => { stack.pop(); showPatrullaDetail(m.patrulla_id); },
   ]);
