@@ -321,6 +321,92 @@ try {
   console.log(
     "PASS: anonymous/pending access denied; self-promotion denied; admin approval, patrols, members, points, attendance, reset permissions work.",
   );
+  r = await query(leader.token, "/account_invitations", "POST", {
+    email: `forbidden-${randomUUID()}@example.com`,
+    nombre: "Forbidden",
+    role: "admin",
+  });
+  assert.ok(r.status >= 400);
+  r = await query(admin.token, `/profiles?id=eq.${admin.id}`, "PATCH", {
+    blocked: true,
+  });
+  assert.ok(r.status >= 400, "Admin must not lock their own account");
+  r = await query(admin.token, `/profiles?id=eq.${leader.id}`, "PATCH", {
+    blocked: true,
+  });
+  assert.equal(r.status, 200);
+  r = await query(leader.token, "/patrullas?select=*");
+  assert.equal(r.data.length, 0, "Already-issued JWT must lose data access");
+  r = await query(leader.token, "/rpc/delete_troop_members", "POST", {
+    member_ids: [],
+  });
+  assert.ok(r.status >= 400);
+  r = await query(leader.token, `/profiles?id=eq.${leader.id}`, "PATCH", {
+    blocked: false,
+  });
+  assert.ok(r.status >= 400 || r.data.length === 0);
+  assert.equal(
+    (
+      await sql.query("select blocked from public.profiles where id=$1", [
+        leader.id,
+      ])
+    ).rows[0].blocked,
+    true,
+  );
+  r = await query(admin.token, `/profiles?id=eq.${leader.id}`, "PATCH", {
+    blocked: false,
+  });
+  assert.equal(r.status, 200);
+  r = await query(leader.token, `/patrullas?id=eq.${patrol.id}&select=*`);
+  assert.equal(r.data.length, 1);
+  const invitedEmail = `invited-${randomUUID()}@example.com`,
+    invitedPassword = randomUUID() + "aA1!";
+  r = await query(admin.token, "/account_invitations", "POST", {
+    email: invitedEmail,
+    nombre: "Preauthorized leader",
+    role: "leader",
+  });
+  assert.equal(r.status, 201);
+  const invitedSignup = await request("/sign-up/email", {
+    email: invitedEmail,
+    password: invitedPassword,
+    name: "Untrusted display name",
+  });
+  const invitedId = invitedSignup.data.user.id;
+  assert.equal(
+    (
+      await sql.query("select role from public.profiles where id=$1", [
+        invitedId,
+      ])
+    ).rows[0].role,
+    "pending",
+  );
+  await sql.query(
+    "update neon_auth.verification set value=$1 where identifier=$2",
+    [
+      createHash("sha256").update("731942").digest("base64url") + ":0",
+      "email-verification-otp-" + invitedEmail,
+    ],
+  );
+  await request("/email-otp/verify-email", {
+    email: invitedEmail,
+    otp: "731942",
+  });
+  const invitedProfile = (
+    await sql.query("select role,nombre from public.profiles where id=$1", [
+      invitedId,
+    ])
+  ).rows[0];
+  assert.equal(invitedProfile.role, "leader");
+  assert.equal(invitedProfile.nombre, "Preauthorized leader");
+  r = await query(
+    admin.token,
+    `/account_invitations?email=eq.${encodeURIComponent(invitedEmail)}`,
+  );
+  assert.equal(r.data[0].claimed_by, invitedId);
+  console.log(
+    "PASS: admin approval/editing, immediate blocking with existing JWTs, unblock, self-lock protection, and verified-email preauthorization work; leaders cannot manage accounts.",
+  );
   const newPassword = randomUUID() + "aA1!";
   await request(
     "/change-password",

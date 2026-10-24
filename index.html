@@ -9,10 +9,10 @@
   <link href="css/app.css" rel="stylesheet">
 
 </head>
-<body>
+<body class="login-visible">
 
 <!-- Login -->
-<div id="login-screen" class="min-vh-100 d-flex align-items-center justify-content-center p-3">
+<div id="login-screen" class="d-flex justify-content-center p-3">
   <div class="card shadow-sm w-100" style="max-width:400px">
     <div class="card-body p-4">
       <div class="text-center mb-3">
@@ -76,6 +76,7 @@
         <a class="nav-link" href="#" data-view="reportes"><i class="fa-solid fa-chart-bar me-2"></i> Reportes</a>
         <hr>
         <a class="nav-link" href="#" data-view="log"><i class="fa-solid fa-list me-2"></i> Registro</a>
+        <button type="button" class="btn btn-outline-primary mt-3 d-none" id="btn-manage-users"><i class="fa-solid fa-users-gear me-1"></i> Usuarios</button>
         <button type="button" class="btn btn-outline-primary mt-3" id="btn-edit-profile">
           <i class="fa-solid fa-user-pen me-1"></i> Editar cuenta
           <i class="fa-solid fa-chevron-right ms-1 nav-btn-arrow"></i>
@@ -414,10 +415,12 @@
             <button type="button" class="btn btn-primary w-100" id="profile-save-mine">Guardar cambios</button>
           </div>
           <div class="tab-pane fade" id="profile-pane-users">
-            <p class="small text-muted">Cada persona crea su cuenta. Super Admin aprueba el acceso y asigna roles.</p>
+            <p class="small text-muted">Aprueba cuentas pendientes, edita roles y bloquea o desbloquea el acceso.</p>
+            <div class="d-flex justify-content-between mb-2"><h6>Cuentas</h6><button type="button" class="btn btn-sm btn-outline-primary" id="profile-user-new">Agregar líder</button></div>
             <div id="profile-users-list" class="mb-3"></div>
             <hr>
-<h6>Editar acceso</h6><input type="hidden" id="profile-user-id">
+            <h6 id="profile-user-form-title">Editar usuario</h6>
+            <input type="hidden" id="profile-user-id">
             <div class="mb-2">
               <label class="form-label small mb-0" for="profile-user-nombre">Nombre</label>
               <input type="text" class="form-control form-control-sm" id="profile-user-nombre">
@@ -434,7 +437,12 @@
                 <option value="admin">Super Admin</option>
               </select>
             </div>
+            <div class="form-check mb-3"><input type="checkbox" class="form-check-input" id="profile-user-blocked"><label for="profile-user-blocked" class="form-check-label">Bloquear acceso</label></div>
+            <p class="small text-muted" id="profile-user-help">Selecciona una cuenta para editarla.</p>
             <button type="button" class="btn btn-primary btn-sm w-100" id="profile-save-user" disabled>Guardar usuario</button>
+            <hr><h6>Líderes preautorizados</h6>
+            <p class="small text-muted">Agrega nombre y correo. Esa persona se registra con su propia contraseña y recibe acceso después de verificar su correo. No se envían invitaciones automáticamente.</p>
+            <div id="profile-invitations-list"></div>
           </div>
         </div>
       </div>
