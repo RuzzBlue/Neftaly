@@ -95,14 +95,19 @@ function renderList() {
     return `
       <div class="col-6">
         <div class="card patrulla-card h-100" data-patrulla="${p.id}" style="--patrulla-color:${escapeHtml(p.color)}">
-          <div class="card-body text-center py-3">
-            <div class="fw-bold mb-1">${escapeHtml(p.nombre)}</div>
-            <div class="total-num text-primary">${pts}</div>
+          <button type="button" class="card-body text-center py-3 border-0 bg-transparent patrulla-points" aria-label="Sumar o restar puntos a ${escapeHtml(p.nombre)}">
+            <span class="fw-bold mb-1 d-block">${escapeHtml(p.nombre)}</span>
+            <span class="total-num text-primary d-block">${pts}</span>
             <small class="text-muted d-block">puntos</small>
-            <hr class="my-2">
+            <span class="d-block border-top my-2"></span>
             <small class="d-block"><strong>${c.total}</strong> miembros</small>
             <small class="d-block text-success">Constantes: ${c.constantes}</small>
             <small class="d-block text-secondary">En lista: ${c.enLista}</small>
+          </button>
+          <div class="px-3 pb-3">
+            <button type="button" class="btn btn-outline-primary btn-sm w-100 patrulla-detail" aria-label="Ver patrulla ${escapeHtml(p.nombre)}">
+              Ver patrulla <i class="fa-solid fa-chevron-right ms-1" aria-hidden="true"></i>
+            </button>
           </div>
         </div>
       </div>`;
@@ -122,7 +127,9 @@ function renderList() {
   el.querySelector('#btn-add-patrulla-pts').onclick = () => openPatrullaModal('add');
   el.querySelector('#btn-sub-patrulla-pts').onclick = () => openPatrullaModal('sub');
   el.querySelectorAll('.patrulla-card').forEach((card) => {
-    card.onclick = () => showPatrullaDetail(parseInt(card.dataset.patrulla, 10));
+    const patrullaId = parseInt(card.dataset.patrulla, 10);
+    card.querySelector('.patrulla-points').onclick = () => openPatrullaModal('add', patrullaId);
+    card.querySelector('.patrulla-detail').onclick = () => showPatrullaDetail(patrullaId);
   });
 }
 
@@ -160,11 +167,12 @@ export function initPointsModalSwitches() {
   document.getElementById('pmb-to-add')?.addEventListener('click', () => applyMemberModalChrome('add'));
 }
 
-function openPatrullaModal(mode) {
+function openPatrullaModal(mode, patrullaId = null) {
   const { patrullas } = getState();
   const modal = document.getElementById('modal-puntos-patrulla');
   modal.querySelector('#ppt-patrulla').innerHTML = patrullas
     .map((p) => `<option value="${p.id}">${escapeHtml(p.nombre)}</option>`).join('');
+  if (patrullaId != null) modal.querySelector('#ppt-patrulla').value = String(patrullaId);
   modal.querySelector('#ppt-cantidad').value = '1';
   modal.querySelector('#ppt-nota').value = '';
   applyPatrullaModalChrome(mode);
