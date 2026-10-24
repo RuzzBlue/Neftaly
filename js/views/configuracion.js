@@ -1,3 +1,4 @@
+import { client } from '../client.js';
 import { refreshData, getState, resetTroopData, getCargoNames, isAdmin } from '../data.js';
 import { setCurrentCiclo, canAccessConfig } from '../auth.js';
 import { CICLOS } from '../constants.js';
@@ -32,9 +33,9 @@ export async function renderConfiguracion() {
     <div class="card mb-3">
       <div class="card-header">Ciclo actual</div>
       <div class="card-body">
-        <p class="small text-muted">Los puntos y bitácora se guardan por ciclo (1, 2, 3). Cambiar ciclo muestra/edita datos de ese ciclo.</p>
+        <p class="small text-muted">Los puntos y bitácora se guardan por ciclo (1, 2, 3). Solo Super Admin puede cambiar el ciclo.</p>
         <div class="btn-group">${CICLOS.map((c) =>
-          `<button type="button" class="btn btn-outline-primary ${c === ciclo ? 'active' : ''}" data-ciclo="${c}">Ciclo ${c}</button>`
+          `<button type="button" class="btn btn-outline-primary ${c === ciclo ? 'active' : ''}" data-ciclo="${c}" ${admin ? '' : 'disabled'}>Ciclo ${c}</button>`
         ).join('')}</div>
       </div>
     </div>
@@ -42,17 +43,17 @@ export async function renderConfiguracion() {
     <div class="card mb-3">
       <div class="card-header d-flex justify-content-between align-items-center">
         <span>Patrullas</span>
-        ${admin ? '<button class="btn btn-sm btn-primary" id="cfg-add-patrulla"><i class="fa-solid fa-plus me-1"></i>Nueva</button>' : ''}
+        ${canAccessConfig() ? '<button class="btn btn-sm btn-primary" id="cfg-add-patrulla"><i class="fa-solid fa-plus me-1"></i>Nueva</button>' : ''}
       </div>
       <ul class="list-group list-group-flush">
-        ${patrullas.map((p) => cfgPatrullaRow(p, admin)).join('') || '<li class="list-group-item text-muted">Sin patrullas</li>'}
+        ${patrullas.map((p) => cfgPatrullaRow(p)).join('') || '<li class="list-group-item text-muted">Sin patrullas</li>'}
       </ul>
     </div>
 
     <div class="card mb-3">
       <div class="card-header d-flex justify-content-between align-items-center">
         <span>Miembros <span class="badge bg-secondary ms-1" id="cfg-miembros-count"></span></span>
-        ${admin ? '<button class="btn btn-sm btn-primary" id="cfg-add-miembro"><i class="fa-solid fa-plus me-1"></i>Nuevo</button>' : ''}
+        ${canAccessConfig() ? '<button class="btn btn-sm btn-primary" id="cfg-add-miembro"><i class="fa-solid fa-plus me-1"></i>Nuevo</button>' : ''}
       </div>
       <div class="card-body pb-2">
         <div class="cfg-member-filters">
@@ -104,10 +105,10 @@ export async function renderConfiguracion() {
     <div class="card mb-3">
       <div class="card-header d-flex justify-content-between align-items-center">
         <span>Cargos de patrulla</span>
-        ${admin ? '<button class="btn btn-sm btn-primary" id="cfg-add-cargo"><i class="fa-solid fa-plus me-1"></i>Nuevo</button>' : ''}
+        ${canAccessConfig() ? '<button class="btn btn-sm btn-primary" id="cfg-add-cargo"><i class="fa-solid fa-plus me-1"></i>Nuevo</button>' : ''}
       </div>
       <ul class="list-group list-group-flush">
-        ${cargos.map((c) => cfgCargoRow(c, admin)).join('') || '<li class="list-group-item text-muted">Sin cargos</li>'}
+        ${cargos.map((c) => cfgCargoRow(c)).join('') || '<li class="list-group-item text-muted">Sin cargos</li>'}
       </ul>
     </div>
 
@@ -120,9 +121,12 @@ export async function renderConfiguracion() {
 
   el.querySelectorAll('[data-ciclo]').forEach((btn) => {
     btn.onclick = async () => {
-      await setCurrentCiclo(parseInt(btn.dataset.ciclo, 10));
-      toast(`Ciclo ${btn.dataset.ciclo} activo`);
-      renderConfiguracion();
+      if (!isAdmin()) return;
+      try {
+        await setCurrentCiclo(parseInt(btn.dataset.ciclo, 10));
+        toast(`Ciclo ${btn.dataset.ciclo} activo`);
+        await renderConfiguracion();
+      } catch (error) { showError(error); }
     };
   });
 
@@ -148,12 +152,12 @@ export async function renderConfiguracion() {
   });
 }
 
-function cfgPatrullaRow(p, admin = isAdmin()) {
+function cfgPatrullaRow(p) {
   return `<li class="list-group-item d-flex justify-content-between align-items-center">
     <span><span class="color-swatch me-2" style="background:${escapeHtml(p.color)}"></span>${escapeHtml(p.nombre)}</span>
     <span class="cfg-list-actions">
       <button type="button" class="btn btn-sm btn-outline-secondary cfg-edit-patrulla" data-id="${p.id}" title="Editar"><i class="fa-solid fa-pen"></i></button>
-      ${admin ? `<button type="button" class="btn btn-sm btn-outline-danger cfg-del-patrulla" data-id="${p.id}" title="Eliminar"><i class="fa-solid fa-trash"></i></button>` : ''}
+      ${canAccessConfig() ? `<button type="button" class="btn btn-sm btn-outline-danger cfg-del-patrulla" data-id="${p.id}" title="Eliminar"><i class="fa-solid fa-trash"></i></button>` : ''}
     </span>
   </li>`;
 }
@@ -247,7 +251,6 @@ function renderMembersTableBody() {
 
   tbody.innerHTML = filtered.map((m) => {
     const pat = patrullas.find((p) => p.id === m.patrulla_id);
-    const admin = isAdmin();
     return `<tr>
       <td class="fw-semibold">${escapeHtml(m.nombre)}</td>
       <td>
@@ -257,7 +260,7 @@ function renderMembersTableBody() {
       <td class="cfg-cargos-cell">${formatMemberCargoBadges(m)}</td>
       <td class="text-end cfg-list-actions">
         <button type="button" class="btn btn-sm btn-outline-secondary cfg-edit-miembro" data-id="${m.id}" title="Editar"><i class="fa-solid fa-pen"></i></button>
-        ${admin ? `<button type="button" class="btn btn-sm btn-outline-danger cfg-del-miembro" data-id="${m.id}" title="Eliminar"><i class="fa-solid fa-trash"></i></button>` : ''}
+        ${canAccessConfig() ? `<button type="button" class="btn btn-sm btn-outline-danger cfg-del-miembro" data-id="${m.id}" title="Eliminar"><i class="fa-solid fa-trash"></i></button>` : ''}
       </td>
     </tr>`;
   }).join('');
@@ -290,10 +293,7 @@ function bindMemberFilters() {
   });
 }
 
-function cfgCargoRow(c, admin = isAdmin()) {
-  if (!admin) {
-    return `<li class="list-group-item">${escapeHtml(c.nombre)}</li>`;
-  }
+function cfgCargoRow(c) {
   return `<li class="list-group-item d-flex justify-content-between align-items-center">
     <span>${escapeHtml(c.nombre)}</span>
     <span class="cfg-list-actions">
@@ -397,7 +397,7 @@ function hideModal(id) {
 // ─── Patrulla ──────────────────────────────────────────────
 
 function openPatrullaModal(id) {
-  if (id == null && !isAdmin()) return;
+  if (!canAccessConfig()) return;
   initConfigModals();
   const isEdit = id != null;
   const p = isEdit ? getState().patrullas.find((x) => x.id === id) : null;
@@ -415,7 +415,7 @@ function openPatrullaModal(id) {
 async function savePatrullaModal() {
   if (saving) return;
   const id = document.getElementById('cfg-patrulla-id').value;
-  if (!id && !isAdmin()) return showError(new Error('No autorizado'));
+  if (!canAccessConfig()) return showError(new Error('No autorizado'));
 
   const nombre = document.getElementById('cfg-patrulla-nombre').value.trim();
   let color = document.getElementById('cfg-patrulla-color-hex').value.trim();
@@ -427,11 +427,11 @@ async function savePatrullaModal() {
   saving = true;
   try {
     if (id) {
-      const { error } = await window.supabase.from('patrullas').update({ nombre, color }).eq('id', parseInt(id, 10));
+      const { error } = await client.from('patrullas').update({ nombre, color }).eq('id', parseInt(id, 10));
       if (error) throw error;
       toast('Patrulla actualizada');
     } else {
-      const { error } = await window.supabase.from('patrullas').insert({ nombre, color, orden: 99 });
+      const { error } = await client.from('patrullas').insert({ nombre, color, orden: 99 });
       if (error) throw error;
       toast('Patrulla creada');
     }
@@ -443,7 +443,7 @@ async function savePatrullaModal() {
 }
 
 async function fetchMemberIdsByPatrulla(patrullaId) {
-  const { data, error } = await window.supabase
+  const { data, error } = await client
     .from('miembros')
     .select('id')
     .eq('patrulla_id', patrullaId);
@@ -453,31 +453,12 @@ async function fetchMemberIdsByPatrulla(patrullaId) {
 
 async function hardDeleteMiembros(ids) {
   if (!ids.length) return;
-  const { error: pcErr } = await window.supabase
-    .from('puntos_crecimiento')
-    .delete()
-    .in('miembro_id', ids);
-  if (pcErr) throw pcErr;
-
-  const { error } = await window.supabase.from('miembros').delete().in('id', ids);
-  if (error) throw error;
-}
-
-async function hardDeleteAllMiembrosInPatrulla(patrullaId) {
-  const ids = await fetchMemberIdsByPatrulla(patrullaId);
-  await hardDeleteMiembros(ids);
-}
-
-async function relocateAllMiembrosFromPatrulla(patrullaId, targetId) {
-  const { error } = await window.supabase
-    .from('miembros')
-    .update({ patrulla_id: targetId, es_guia: false, es_subguia: false })
-    .eq('patrulla_id', patrullaId);
+  const { error } = await client.rpc('delete_troop_members', { member_ids: ids });
   if (error) throw error;
 }
 
 async function confirmDeletePatrulla(id) {
-  if (!isAdmin()) return;
+  if (!canAccessConfig()) return;
   initConfigModals();
   const p = getState().patrullas.find((x) => x.id === id);
   if (!p) return;
@@ -498,37 +479,8 @@ async function confirmDeletePatrulla(id) {
   showModal('modal-delete-patrulla');
 }
 
-async function findOrCreateDefaultPatrulla(excludeId) {
-  const { patrullas } = getState();
-
-  const defaultPatrullas = patrullas
-    .filter((p) => p.id !== excludeId && /^default\s+\d+$/i.test(p.nombre.trim()))
-    .sort((a, b) => {
-      const na = parseInt(a.nombre.match(/\d+/)?.[0] || '0', 10);
-      const nb = parseInt(b.nombre.match(/\d+/)?.[0] || '0', 10);
-      return na - nb;
-    });
-
-  if (defaultPatrullas.length) return defaultPatrullas[0];
-
-  let n = 1;
-  while (patrullas.some(
-    (p) => p.id !== excludeId && p.nombre.toLowerCase() === `default ${n}`.toLowerCase()
-  )) {
-    n += 1;
-  }
-
-  const { data, error } = await window.supabase
-    .from('patrullas')
-    .insert({ nombre: `Default ${n}`, color: '#6c757d', orden: 999 })
-    .select()
-    .single();
-  if (error) throw error;
-  return data;
-}
-
 async function executeDeletePatrulla() {
-  if (saving || pendingDeletePatrullaId == null) return;
+  if (saving || !canAccessConfig() || pendingDeletePatrullaId == null) return;
   const id = pendingDeletePatrullaId;
   const mode = document.querySelector('input[name="del-patrulla-mode"]:checked')?.value || 'relocate';
 
@@ -540,23 +492,11 @@ async function executeDeletePatrulla() {
   }
 
   try {
-    if (mode === 'delete-members') {
-      await hardDeleteAllMiembrosInPatrulla(id);
-    } else {
-      const memberIds = await fetchMemberIdsByPatrulla(id);
-      if (memberIds.length) {
-        const target = await findOrCreateDefaultPatrulla(id);
-        await relocateAllMiembrosFromPatrulla(id, target.id);
-        toast(`Miembros movidos a "${target.nombre}"`);
-      }
-    }
-
-    const { error: ptsErr } = await window.supabase.from('puntos_patrulla').delete().eq('patrulla_id', id);
-    if (ptsErr) throw ptsErr;
-
-    const { error } = await window.supabase.from('patrullas').delete().eq('id', id);
+    const { error } = await client.rpc('delete_troop_patrol', {
+      patrol_id: id,
+      delete_members: mode === 'delete-members',
+    });
     if (error) throw error;
-
     hideModal('modal-delete-patrulla');
     pendingDeletePatrullaId = null;
     toast('Patrulla eliminada', 'warning');
@@ -573,10 +513,9 @@ async function executeDeletePatrulla() {
 // ─── Miembro ───────────────────────────────────────────────
 
 function openMiembroModal(id) {
-  if (id == null && !isAdmin()) return;
+  if (!canAccessConfig()) return;
   initConfigModals();
   const isEdit = id != null;
-  const leaderEdit = isEdit && !isAdmin();
   const m = isEdit ? getState().miembros.find((x) => x.id === id) : null;
   const { patrullas, cargos, miembroCargos } = getState();
 
@@ -584,8 +523,8 @@ function openMiembroModal(id) {
   document.getElementById('cfg-miembro-id').value = isEdit ? id : '';
   const nombreEl = document.getElementById('cfg-miembro-nombre');
   nombreEl.value = m?.nombre || '';
-  nombreEl.readOnly = leaderEdit;
-  nombreEl.classList.toggle('bg-light', leaderEdit);
+  nombreEl.readOnly = false;
+  nombreEl.classList.remove('bg-light');
   document.getElementById('cfg-miembro-patrulla').innerHTML = patrullas
     .map((p) => `<option value="${p.id}">${escapeHtml(p.nombre)}</option>`).join('');
   if (m) document.getElementById('cfg-miembro-patrulla').value = String(m.patrulla_id);
@@ -623,7 +562,7 @@ async function clearExclusiveRolesInPatrulla(miembroId, patrullaId, { esGuia, es
 
   if (esGuia) {
     for (const s of siblings.filter((m) => m.es_guia)) {
-      const { error } = await window.supabase
+      const { error } = await client
         .from('miembros')
         .update({ es_guia: false })
         .eq('id', s.id);
@@ -633,7 +572,7 @@ async function clearExclusiveRolesInPatrulla(miembroId, patrullaId, { esGuia, es
 
   if (esSubguia) {
     for (const s of siblings.filter((m) => m.es_subguia)) {
-      const { error } = await window.supabase
+      const { error } = await client
         .from('miembros')
         .update({ es_subguia: false })
         .eq('id', s.id);
@@ -655,7 +594,7 @@ async function syncMiembroCargos(miembroId, selectedIds, patrullaId) {
         (x) => x.miembro_id === otherId && x.cargo_id === cargo_id
       );
       if (!hadCargo) continue;
-      const { error } = await window.supabase.from('miembro_cargos')
+      const { error } = await client.from('miembro_cargos')
         .delete()
         .eq('miembro_id', otherId)
         .eq('cargo_id', cargo_id);
@@ -668,11 +607,11 @@ async function syncMiembroCargos(miembroId, selectedIds, patrullaId) {
   const toRemove = current.filter((cid) => !selectedIds.includes(cid));
 
   for (const cargo_id of toAdd) {
-    const { error } = await window.supabase.from('miembro_cargos').insert({ miembro_id: miembroId, cargo_id });
+    const { error } = await client.from('miembro_cargos').insert({ miembro_id: miembroId, cargo_id });
     if (error) throw error;
   }
   for (const cargo_id of toRemove) {
-    const { error } = await window.supabase.from('miembro_cargos')
+    const { error } = await client.from('miembro_cargos')
       .delete()
       .eq('miembro_id', miembroId)
       .eq('cargo_id', cargo_id);
@@ -683,14 +622,9 @@ async function syncMiembroCargos(miembroId, selectedIds, patrullaId) {
 async function saveMiembroModal() {
   if (saving) return;
   const idVal = document.getElementById('cfg-miembro-id').value;
-  if (!idVal && !isAdmin()) return showError(new Error('No autorizado'));
+  if (!canAccessConfig()) return showError(new Error('No autorizado'));
 
-  const existing = idVal
-    ? getState().miembros.find((x) => x.id === parseInt(idVal, 10))
-    : null;
-  const nombre = (!isAdmin() && existing)
-    ? existing.nombre
-    : document.getElementById('cfg-miembro-nombre').value.trim();
+  const nombre = document.getElementById('cfg-miembro-nombre').value.trim();
   const patrulla_id = parseInt(document.getElementById('cfg-miembro-patrulla').value, 10);
   const es_guia = document.getElementById('cfg-miembro-guia').checked;
   const es_subguia = document.getElementById('cfg-miembro-subguia').checked;
@@ -711,11 +645,11 @@ async function saveMiembroModal() {
     });
 
     if (idVal) {
-      const { error } = await window.supabase.from('miembros').update(payload).eq('id', miembroId);
+      const { error } = await client.from('miembros').update(payload).eq('id', miembroId);
       if (error) throw error;
       toast('Miembro actualizado');
     } else {
-      const { data, error } = await window.supabase.from('miembros').insert(payload).select().single();
+      const { data, error } = await client.from('miembros').insert(payload).select().single();
       if (error) throw error;
       miembroId = data.id;
       toast('Miembro creado');
@@ -730,7 +664,7 @@ async function saveMiembroModal() {
 }
 
 function confirmDeleteMiembro(id) {
-  if (!isAdmin()) return;
+  if (!canAccessConfig()) return;
   const m = getState().miembros.find((x) => x.id === id);
   openDeleteModal(`¿Eliminar permanentemente a "${m?.nombre}"? Se borrarán también sus puntos y asistencia.`, async () => {
     await hardDeleteMiembros([id]);
@@ -743,7 +677,7 @@ function confirmDeleteMiembro(id) {
 // ─── Cargo ─────────────────────────────────────────────────
 
 function openCargoModal(id) {
-  if (!isAdmin()) return;
+  if (!canAccessConfig()) return;
   initConfigModals();
   const isEdit = id != null;
   const c = isEdit ? getState().cargos.find((x) => x.id === id) : null;
@@ -754,7 +688,7 @@ function openCargoModal(id) {
 }
 
 async function saveCargoModal() {
-  if (saving || !isAdmin()) return;
+  if (saving || !canAccessConfig()) return;
   const nombre = document.getElementById('cfg-cargo-nombre').value.trim();
   const idVal = document.getElementById('cfg-cargo-id').value;
 
@@ -763,11 +697,11 @@ async function saveCargoModal() {
   saving = true;
   try {
     if (idVal) {
-      const { error } = await window.supabase.from('cargos').update({ nombre }).eq('id', parseInt(idVal, 10));
+      const { error } = await client.from('cargos').update({ nombre }).eq('id', parseInt(idVal, 10));
       if (error) throw error;
       toast('Cargo actualizado');
     } else {
-      const { error } = await window.supabase.from('cargos').insert({ nombre, orden: 99 });
+      const { error } = await client.from('cargos').insert({ nombre, orden: 99 });
       if (error) throw error;
       toast('Cargo creado');
     }
@@ -779,10 +713,10 @@ async function saveCargoModal() {
 }
 
 function confirmDeleteCargo(id) {
-  if (!isAdmin()) return;
+  if (!canAccessConfig()) return;
   const c = getState().cargos.find((x) => x.id === id);
   openDeleteModal(`¿Eliminar el cargo "${c?.nombre}"? Se quitará de quienes lo tengan asignado.`, async () => {
-    const { error } = await window.supabase.from('cargos').delete().eq('id', id);
+    const { error } = await client.from('cargos').delete().eq('id', id);
     if (error) throw error;
     hideModal('modal-cfg-delete');
     toast('Cargo eliminado', 'warning');
@@ -877,7 +811,7 @@ export function openResetTroopModal() {
 }
 
 export async function submitResetTroopModal() {
-  if (resetSubmitting) return;
+  if (resetSubmitting || !isAdmin()) return;
   const confirmText = document.getElementById('reset-confirm-text')?.value.trim();
   if (confirmText !== 'BORRAR') return;
 

@@ -1,3 +1,4 @@
+import { client } from '../client.js';
 import { CICLOS } from '../constants.js';
 import { escapeHtml } from '../utils.js';
 
@@ -37,7 +38,7 @@ export async function renderLog() {
 async function loadLog() {
   const ciclo = document.getElementById('log-ciclo').value;
   const tipo = document.getElementById('log-tipo').value;
-  let q = window.supabase
+  let q = client
     .from('action_log')
     .select('*')
     .order('created_at', { ascending: false })
@@ -46,7 +47,7 @@ async function loadLog() {
   if (tipo) q = q.eq('tipo', tipo);
   const [{ data, error }, { data: profiles }] = await Promise.all([
     q,
-    window.supabase.from('profiles').select('id, nombre, email'),
+    client.from('profiles').select('id, nombre, email'),
   ]);
   const profileMap = Object.fromEntries((profiles || []).map((p) => [p.id, p]));
   const list = document.getElementById('log-list');

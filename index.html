@@ -7,7 +7,7 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
   <link href="css/app.css" rel="stylesheet">
-  <script src="js/config.js"></script>
+
 </head>
 <body>
 
@@ -28,13 +28,18 @@
           <label class="form-label" for="login-password">Contraseña</label>
           <input type="password" class="form-control" id="login-password" required autocomplete="current-password">
         </div>
-        <div class="form-check mb-3">
-          <input class="form-check-input" type="checkbox" id="login-remember" checked>
-          <label class="form-check-label" for="login-remember">Recordar en este dispositivo</label>
-        </div>
+        <div id="signup-name-wrap" class="mb-3 d-none"><label class="form-label" for="signup-name">Nombre</label><input class="form-control" id="signup-name" autocomplete="name"></div>
         <div id="login-error" class="alert alert-danger d-none py-2"></div>
         <button type="submit" class="btn btn-primary w-100">Entrar</button>
+<button type="button" id="toggle-signup" class="btn btn-link w-100 mt-2">Crear mi cuenta</button>
       </form>
+      <div id="verify-wrap" class="mt-3 d-none">
+        <label for="email-otp" class="form-label">Código de verificación del correo</label>
+        <input id="email-otp" class="form-control" inputmode="numeric" autocomplete="one-time-code">
+        <button type="button" id="verify-email" class="btn btn-primary w-100 mt-2">Verificar correo</button>
+        <button type="button" id="resend-code" class="btn btn-link w-100">Reenviar código</button>
+      </div>
+      <button type="button" id="pending-logout" class="btn btn-outline-secondary w-100 mt-2 d-none">Cerrar sesión</button>
     </div>
   </div>
 </div>
@@ -90,22 +95,16 @@
 </div>
 
 <!-- Modal puntos patrulla -->
-<div class="modal fade" id="modal-puntos-patrulla" tabindex="-1">
+<div class="modal fade" id="modal-puntos-patrulla" tabindex="-1" aria-label="Puntos de patrulla">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
-      <div class="modal-header add-points modal-header-points">
-        <div class="modal-header-slot modal-header-left">
-          <button type="button" class="btn modal-mode-switch btn-points-sub" id="ppt-to-sub">
-            Restar <i class="fa-solid fa-chevron-right"></i>
-          </button>
-          <button type="button" class="btn modal-mode-switch btn-points-add d-none" id="ppt-to-add">
-            <i class="fa-solid fa-chevron-left"></i> Sumar
-          </button>
-        </div>
-        <h5 class="modal-title modal-header-center mb-0" id="ppt-modal-title">Sumar</h5>
-        <div class="modal-header-slot modal-header-right">
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
+      <div class="modal-header modal-header-points" role="group" aria-label="Operación de puntos">
+        <button type="button" class="btn modal-mode-switch btn-points-add" id="ppt-to-add" aria-pressed="true">
+          <i class="fa-solid fa-plus me-1" aria-hidden="true"></i> Sumar
+        </button>
+        <button type="button" class="btn modal-mode-switch btn-points-sub" id="ppt-to-sub" aria-pressed="false">
+          <i class="fa-solid fa-minus me-1" aria-hidden="true"></i> Restar
+        </button>
       </div>
       <div class="modal-body">
         <div class="mb-3">
@@ -129,7 +128,7 @@
           <input type="text" class="form-control" id="ppt-nota">
         </div>
       </div>
-      <div class="modal-footer">
+      <div class="modal-footer justify-content-between">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
         <button type="button" class="btn btn-primary" id="ppt-submit">Guardar</button>
       </div>
@@ -138,22 +137,16 @@
 </div>
 
 <!-- Modal puntos miembro -->
-<div class="modal fade" id="modal-puntos-miembro" tabindex="-1">
+<div class="modal fade" id="modal-puntos-miembro" tabindex="-1" aria-label="Puntos del miembro">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
-      <div class="modal-header add-points modal-header-points">
-        <div class="modal-header-slot modal-header-left">
-          <button type="button" class="btn modal-mode-switch btn-points-sub" id="pmb-to-sub">
-            Quitar <i class="fa-solid fa-chevron-right"></i>
-          </button>
-          <button type="button" class="btn modal-mode-switch btn-points-add d-none" id="pmb-to-add">
-            <i class="fa-solid fa-chevron-left"></i> Añadir
-          </button>
-        </div>
-        <h5 class="modal-title modal-header-center mb-0" id="pmb-modal-title">Añadir</h5>
-        <div class="modal-header-slot modal-header-right">
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
+      <div class="modal-header modal-header-points" role="group" aria-label="Operación de puntos">
+        <button type="button" class="btn modal-mode-switch btn-points-add" id="pmb-to-add" aria-pressed="true">
+          <i class="fa-solid fa-plus me-1" aria-hidden="true"></i> Sumar
+        </button>
+        <button type="button" class="btn modal-mode-switch btn-points-sub" id="pmb-to-sub" aria-pressed="false">
+          <i class="fa-solid fa-minus me-1" aria-hidden="true"></i> Restar
+        </button>
       </div>
       <div class="modal-body">
         <div class="mb-3">
@@ -177,7 +170,7 @@
           <input type="text" class="form-control" id="pmb-nota">
         </div>
       </div>
-      <div class="modal-footer">
+      <div class="modal-footer justify-content-between">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
         <button type="button" class="btn btn-primary" id="pmb-submit">Guardar</button>
       </div>
@@ -390,9 +383,7 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
-        <div id="profile-free-tier-notice" class="alert alert-warning small py-2 d-none mb-3" role="alert">
-          Cambios a nivel de usuario están limitados en la cuenta gratuita
-        </div>
+
         <ul class="nav nav-tabs mb-3" role="tablist">
           <li class="nav-item" role="presentation">
             <button class="nav-link active" id="profile-tab-mine" data-bs-toggle="tab" data-bs-target="#profile-pane-mine" type="button">Mi cuenta</button>
@@ -409,10 +400,11 @@
             </div>
             <div class="mb-3">
               <label class="form-label" for="profile-email">Correo</label>
-              <input type="email" class="form-control" id="profile-email" autocomplete="username">
+              <input type="email" class="form-control" id="profile-email" autocomplete="username" readonly>
             </div>
             <div class="mb-3">
-              <label class="form-label" for="profile-password">Nueva contraseña</label>
+              <label class="form-label" for="profile-current-password">Contraseña actual</label><input type="password" class="form-control mb-2" id="profile-current-password" autocomplete="current-password">
+<label class="form-label" for="profile-password">Nueva contraseña</label>
               <input type="password" class="form-control" id="profile-password" autocomplete="new-password" placeholder="Dejar vacío para no cambiar">
             </div>
             <div class="mb-3">
@@ -422,14 +414,10 @@
             <button type="button" class="btn btn-primary w-100" id="profile-save-mine">Guardar cambios</button>
           </div>
           <div class="tab-pane fade" id="profile-pane-users">
-            <p class="small text-muted">Solo Super Admin puede crear usuarios y cambiar roles.</p>
+            <p class="small text-muted">Cada persona crea su cuenta. Super Admin aprueba el acceso y asigna roles.</p>
             <div id="profile-users-list" class="mb-3"></div>
             <hr>
-            <div class="d-flex justify-content-between align-items-center mb-2">
-              <h6 class="mb-0" id="profile-user-form-title">Nuevo usuario</h6>
-              <button type="button" class="btn btn-link btn-sm p-0 d-none" id="profile-user-new">+ Nuevo</button>
-            </div>
-            <input type="hidden" id="profile-user-id">
+<h6>Editar acceso</h6><input type="hidden" id="profile-user-id">
             <div class="mb-2">
               <label class="form-label small mb-0" for="profile-user-nombre">Nombre</label>
               <input type="text" class="form-control form-control-sm" id="profile-user-nombre">
@@ -438,18 +426,15 @@
               <label class="form-label small mb-0" for="profile-user-email">Correo</label>
               <input type="email" class="form-control form-control-sm" id="profile-user-email">
             </div>
-            <div class="mb-2" id="profile-user-password-wrap">
-              <label class="form-label small mb-0" for="profile-user-password">Contraseña</label>
-              <input type="password" class="form-control form-control-sm" id="profile-user-password" placeholder="Solo al crear">
-            </div>
+
             <div class="mb-3">
               <label class="form-label small mb-0" for="profile-user-role">Rol</label>
               <select class="form-select form-select-sm" id="profile-user-role">
-                <option value="leader">Admin</option>
+                <option value="pending">Pendiente / sin acceso</option><option value="leader">Admin</option>
                 <option value="admin">Super Admin</option>
               </select>
             </div>
-            <button type="button" class="btn btn-primary btn-sm w-100" id="profile-save-user">Crear usuario</button>
+            <button type="button" class="btn btn-primary btn-sm w-100" id="profile-save-user" disabled>Guardar usuario</button>
           </div>
         </div>
       </div>
@@ -457,34 +442,7 @@
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script type="module">
-  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-  import { initAuth, setOnAuthenticated } from './js/auth.js';
-  import { initApp } from './js/app.js';
 
-  const cfg = window.NEFTALY_CONFIG;
-  if (!cfg?.supabaseUrl || !cfg?.supabaseAnonKey) {
-    document.body.innerHTML = '<div class="alert alert-danger m-4">Falta <code>js/config.js</code>. Copia <code>config.example.js</code> y agrega tus credenciales de Supabase.</div>';
-    throw new Error('Missing config');
-  }
-
-  window.supabase = createClient(cfg.supabaseUrl, cfg.supabaseAnonKey, {
-    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
-  });
-
-  setOnAuthenticated(() => initApp());
-
-  initAuth()
-    .then(async (loggedIn) => {
-      if (loggedIn) await initApp();
-    })
-    .catch((err) => {
-      console.error('Init failed:', err);
-      document.getElementById('login-error')?.classList.remove('d-none');
-      const el = document.getElementById('login-error');
-      if (el) el.textContent = err?.message || 'Error al iniciar la app';
-    });
-</script>
+<script type="module" src="/js/main.js"></script>
 </body>
 </html>

@@ -60,44 +60,37 @@ body {
 }
 
 .modal-header.modal-header-points {
-  display: grid !important;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-  align-items: center;
-  gap: 0.5rem;
-  padding-top: 0.85rem;
-  padding-bottom: 0.85rem;
-}
-
-.modal-header-points .modal-header-slot {
-  display: flex;
-  align-items: center;
-}
-
-.modal-header-points .modal-header-left {
-  justify-self: start;
-}
-
-.modal-header-points .modal-header-right {
-  justify-self: end;
-}
-
-.modal-header-points .modal-header-center {
-  justify-self: center;
-  grid-column: 2;
-  margin: 0 !important;
-  padding: 0;
-  text-align: center;
-  font-weight: 700;
-  white-space: nowrap;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  background: #fff;
+  padding: 1rem;
 }
 
 .modal-mode-switch {
-  white-space: nowrap;
-  font-size: 0.875rem;
-  font-weight: 600;
-  padding: 0.4rem 0.75rem;
-  border: none;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  min-height: 3rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  border-width: 2px;
+  transition: opacity 120ms ease, box-shadow 120ms ease;
+}
+
+.modal-mode-switch[aria-pressed="false"] {
+  opacity: 0.5;
+}
+
+.modal-mode-switch[aria-pressed="false"]:hover,
+.modal-mode-switch[aria-pressed="false"]:focus-visible {
+  opacity: 0.8;
+}
+
+.modal-mode-switch[aria-pressed="true"] {
+  box-shadow: 0 0 0 3px #21252926;
+}
+
+.modal-mode-switch:focus-visible {
+  outline: 3px solid #212529;
+  outline-offset: 3px;
 }
 
 .patrulla-card {
@@ -121,11 +114,6 @@ body {
 .btn-points-add:hover { background: #157347; border-color: #157347; color: #fff; }
 .btn-points-sub { background: var(--neftaly-red); border-color: var(--neftaly-red); color: #fff; }
 .btn-points-sub:hover { background: #bb2d3b; border-color: #bb2d3b; color: #fff; }
-
-.modal-header.add-points { background: var(--neftaly-green); color: #fff; }
-.modal-header.sub-points { background: var(--neftaly-red); color: #fff; }
-.modal-header.add-points .btn-close,
-.modal-header.sub-points .btn-close { filter: invert(1); }
 
 .area-badge {
   display: flex;

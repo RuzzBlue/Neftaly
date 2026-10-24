@@ -16,3 +16,7 @@ Thumbs.db
 
 # Logs
 *.log
+.neon
+
+dist/
+.test-credentials.local.json

@@ -1,74 +1,43 @@
 # Neftaly — Gestión de Tropa Scout
 
-App estática para GitHub Pages + [Supabase](https://supabase.com) (PostgreSQL + Auth).
+Static app built with Vite, hosted on GitHub Pages, using Neon Postgres, Managed Better Auth, and the Neon Data API.
 
-**URL:** https://ruzzblue.github.io/Neftaly/
+## Local setup
 
-## Configuración inicial (una sola vez)
+Requires Node.js 24. Install dependencies with `npm ci`.
 
-### 1. Base de datos
+Link the existing Neon project (do not create another project):
 
-En [Supabase Dashboard](https://supabase.com/dashboard) → **SQL Editor**, ejecuta en orden:
+`npx neon@latest link --org-id org-bitter-base-37060231 --project-id mute-fire-36946923 --branch production -y`
 
-1. `supabase/001_schema.sql`
-2. Crea usuarios (paso 2 abajo)
-3. `supabase/002_seed.sql` (datos de patrullas; ajusta roles al final con tus emails)
-4. Opcional: `supabase/003_backfill_profiles.sql` si creaste usuarios manualmente
-5. Opcional: `supabase/004_reset_troop_data.sql` para reinicio configurable
-6. Opcional: `supabase/005_leader_config_rls.sql` para que líderes cambien ciclo y editen patrullas
-7. Opcional: `supabase/006_profile_users.sql` para proteger cambios de rol propios
+The CLI writes ignored `.neon` and `.env.local` files. Keep DATABASE_URL and DATABASE_URL_UNPOOLED private. The browser build receives only the public Auth/database HTTPS endpoints, never database credentials.
 
-### 2. Usuarios de acceso
+Run `npm run dev` and open the printed /Neftaly/ URL. Register the exact local origin with `npx neon@latest neon-auth domain add http://127.0.0.1:5173` if needed.
 
-**No se envían correos.** Los emails son solo para iniciar sesión.
+## Schema and accounts
 
-En **Authentication → Providers → Email**, desactiva **Confirm email** (recomendado).
+The numbered files in `neon/` define the fresh schema and permission updates. `npm run migrate` applies them in order. Test changes on a Neon branch first. Apply with `npm run migrate`, then `npx neon@latest data-api refresh-schema --database neftalydb`.
 
-**Opción A — Dashboard:** Authentication → Users → Add user (marca *Auto Confirm*).
+Every person registers their own email, name, and password, then enters the email verification code. Email/password Auth must require verification with OTP enabled. New accounts have the pending role and cannot read troop data. Super Admin approves accounts in **Editar cuenta → Usuarios**. Leaders can add, edit, and delete patrols, members (including names), and cargos. Only Super Admin can change the cycle, assign account roles, or reset the troop. The final Super Admin cannot demote themselves.
 
-**Opción B — Script local:**
+The first administrator is reserved in `neftaly_private.bootstrap_admin`, outside the exposed API schema. Insert the owner's email with a parameterized administrative SQL query before registration. Only a verified email can consume that reservation. Do not assign the first person who signs up as admin.
 
-```powershell
-copy scripts\create-users.example.ps1 scripts\create-users.local.ps1
-# Edita create-users.local.ps1: secret key, emails, contraseña y roles
-powershell -ExecutionPolicy Bypass -File scripts\create-users.local.ps1
-```
+For additional administrators, use the existing Super Admin UI. Change your password in **Mi cuenta** using your current password. Account email changes are intentionally read-only; authentication identity and profile email must stay consistent.
 
-`create-users.local.ps1` está en `.gitignore` — no lo subas a GitHub.
+The files under `supabase/`, the old `js/config*.js`, and old create-users scripts are historical and are no longer used by the app. No existing Supabase records are migrated or deleted.
 
-Asigna roles `admin` o `leader` en el script o con los `UPDATE` al final de `002_seed.sql` / `003_backfill_profiles.sql`.
+## Build and deployment
 
-### 3. Claves de API
+`npm run build` writes `dist/`. `npm run preview` serves the compiled app.
 
-Copia `js/config.example.js` → `js/config.js` y agrega tu **Project URL** y **publishable key** (`sb_publishable_...`).
+The GitHub Pages workflow installs locked dependencies, builds with the public production Auth URL, and uploads **only dist/**. It never uploads the repository root or local environment files. Merging into main publishes at https://ruzzblue.github.io/Neftaly/.
 
-La publishable key es segura en el navegador con RLS activo. **Nunca** subas la secret key ni la contraseña de la base de datos.
+## Verification
 
-### 4. Probar en local
+Create the disposable Neon branch `migration-test` with `npx neon@latest checkout migration-test --create`, apply the schema, and refresh its Data API schema. Then run:
 
-```powershell
-npx --yes serve .
-```
+`node --env-file=.env.local scripts/verify-neon.mjs`
 
-Visita http://localhost:3000
+This suite refuses production. It creates disposable example.com test accounts, uses known OTP hash fixtures to exercise email verification for those test users, and verifies authentication, session restoration, sign-out, anonymous/pending restrictions, blocked self-promotion, admin approval, patrol/member CRUD, points, attendance, and reset permissions. It saves test-only credentials in the ignored `.test-credentials.local.json` for browser checks. No real person's email-code delivery is asserted by this automated suite.
 
-### 5. GitHub Pages
-
-1. Repo: https://github.com/RuzzBlue/Neftaly
-2. **Settings → Pages → Build and deployment → Source:** choose **GitHub Actions** (not “Deploy from a branch”)
-3. Push to `main` — the workflow `.github/workflows/pages.yml` publishes the site automatically
-4. First deploy: open the **Actions** tab, confirm **Deploy GitHub Pages** finished green
-5. Live URL: **https://ruzzblue.github.io/Neftaly/**
-
-If the site stays 404: check **Settings → Pages** shows a green “Your site is live at…”, and that the repo is **Public** (or Pages is enabled for your plan on private repos).
-
-## Funciones
-
-- **Resumen:** puntos de patrullas, detalle por miembro y bitácora
-- **Asistencia:** registro por sábado; 3 ausencias seguidas → *en lista*
-- **Configuración** (admin completo; líderes: ciclo, editar patrullas/miembros, ver cargos): ciclos 1–3, patrullas, miembros, cargos, reinicio de tropa (solo admin)
-- **Reportes** y **Registro** de acciones (puntos y asistencia)
-
-## Ciclos
-
-Hay 3 ciclos por año scout. Al cambiar de ciclo, los puntos se guardan por ciclo; un ciclo nuevo empieza en 0 sin borrar historial.
+Return to production using `npx neon@latest checkout production` after testing. Neon branches and their Auth/Data API endpoints are isolated; never deploy a test branch's endpoint to the production frontend.

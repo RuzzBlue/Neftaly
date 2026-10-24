@@ -1,212 +1,222 @@
-import { showError } from './utils.js';
-
+import { client, account } from "./client.js";
 let profile = null;
-let onAuthenticated = null;
-let authEventsBound = false;
-let loginInProgress = false;
-
-export function getProfile() { return profile; }
-export function isAdmin() { return profile?.role === 'admin'; }
-export function isStaff() { return profile?.role === 'admin' || profile?.role === 'leader'; }
-export function canAccessConfig() { return isStaff(); }
-
-/** Etiquetas en español: leader → Admin, admin → Super Admin */
-export function roleLabel(role) {
-  if (role === 'admin') return 'Super Admin';
-  if (role === 'leader') return 'Admin';
-  return role || '';
-}
-
-export function updateUserDisplay() {
-  const p = profile;
-  const nameEl = document.getElementById('user-display-name');
-  if (nameEl && p) {
-    nameEl.textContent = p.nombre || p.email;
-    const roleEl = document.getElementById('user-display-role');
-    if (roleEl) roleEl.textContent = roleLabel(p.role);
-  }
-  document.getElementById('nav-config')?.classList.toggle('d-none', !canAccessConfig());
-
-  const profileBtn = document.getElementById('btn-edit-profile');
-  if (profileBtn && p) {
-    const label = isAdmin() ? 'Editar cuentas' : 'Editar cuenta';
-    profileBtn.innerHTML = `<i class="fa-solid fa-user-pen me-1"></i> ${label}<i class="fa-solid fa-chevron-right ms-1 nav-btn-arrow"></i>`;
-  }
-}
-
+let onAuthenticated;
+let busy = false;
+let signup = false;
+export const getProfile = () => profile;
+export const isAdmin = () => profile?.role === "admin";
+export const isStaff = () => ["admin", "leader"].includes(profile?.role);
+export const canAccessConfig = isStaff;
+export const roleLabel = (role) =>
+  ({ admin: "Super Admin", leader: "Admin", pending: "Pendiente" })[role] ||
+  role;
 export function setOnAuthenticated(fn) {
   onAuthenticated = fn;
 }
-
-function bindAuthEvents() {
-  if (authEventsBound) return;
-  authEventsBound = true;
-  document.getElementById('login-form')?.addEventListener('submit', onLogin);
-  document.getElementById('btn-logout')?.addEventListener('click', onLogout);
+export function updateUserDisplay() {
+  document.getElementById("user-display-name").textContent =
+    profile?.nombre || profile?.email || "";
+  document.getElementById("user-display-role").textContent =
+    roleLabel(profile?.role) || "";
+  document.getElementById("nav-config").classList.toggle("d-none", !isStaff());
 }
-
-/** Evita deadlock de Supabase: no await supabase dentro de onAuthStateChange directamente */
-function defer(fn) {
-  setTimeout(fn, 0);
+function message(text) {
+  const el = document.getElementById("login-error");
+  el.textContent = text;
+  el.classList.remove("d-none");
 }
-
-async function handleSession(session) {
-  if (session) {
-    await loadProfile();
-    showAppShell();
-    if (onAuthenticated) await onAuthenticated();
-  } else {
-    profile = null;
+function showLogin() {
+  document.getElementById("login-screen").classList.remove("d-none");
+  document.getElementById("app-shell").classList.remove("ready");
+}
+export async function loadProfile() {
+  const {
+    data: { user },
+    error: authError,
+  } = await client.auth.getUser();
+  if (authError) throw authError;
+  if (!user) throw new Error("No autenticado");
+  const { data, error } = await client
+    .from("profiles")
+    .select("*")
+    .eq("id", user.id)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) throw new Error("Perfil todavía no disponible. Intenta de nuevo.");
+  profile = data;
+  updateUserDisplay();
+  return data;
+}
+async function enter() {
+  await loadProfile();
+  if (!isStaff()) {
     showLogin();
+    document.getElementById("pending-logout").classList.remove("d-none");
+    message("Tu cuenta está pendiente. Un Super Admin debe aprobar tu acceso.");
+    return false;
   }
+  document.getElementById("login-screen").classList.add("d-none");
+  document.getElementById("app-shell").classList.add("ready");
+  document.getElementById("pending-logout").classList.add("d-none");
+  await onAuthenticated?.();
+  return true;
 }
-
 export async function initAuth() {
-  bindAuthEvents();
-  const sb = window.supabase;
-
-  sb.auth.onAuthStateChange((_event, session) => {
-    defer(() => {
-      handleSession(session).catch(async (err) => {
-        console.error('Auth error:', err);
-        await sb.auth.signOut();
-        profile = null;
-        showLogin();
-        showLoginError(err?.message || String(err));
-      });
-    });
-  });
-
-  const { data: { session } } = await sb.auth.getSession();
-  if (session) {
+  document.getElementById("verify-email").onclick = async () => {
+    const button = document.getElementById("verify-email");
+    button.disabled = true;
     try {
-      await handleSession(session);
-      return true;
+      const email = document.getElementById("login-email").value.trim();
+      const otp = document.getElementById("email-otp").value.trim();
+      const { error } = await account.emailOtp.verifyEmail({ email, otp });
+      if (error) throw error;
+      const result = await client.auth.signInWithPassword({
+        email,
+        password: document.getElementById("login-password").value,
+      });
+      if (result.error) throw result.error;
+      document.getElementById("verify-wrap").classList.add("d-none");
+      await enter();
     } catch (err) {
-      console.error('Session restore failed:', err);
-      await sb.auth.signOut();
-      showLogin();
-      showLoginError(err?.message || String(err));
-      return false;
+      message(err.message);
+    } finally {
+      button.disabled = false;
     }
-  }
-
+  };
+  document.getElementById("resend-code").onclick = async () => {
+    try {
+      const { error } = await account.emailOtp.sendVerificationOtp({
+        email: document.getElementById("login-email").value.trim(),
+        type: "email-verification",
+      });
+      if (error) throw error;
+      message("Código enviado. Revisa tu correo.");
+    } catch (err) {
+      message(err.message);
+    }
+  };
+  document.getElementById("toggle-signup").onclick = () => {
+    signup = !signup;
+    document
+      .getElementById("signup-name-wrap")
+      .classList.toggle("d-none", !signup);
+    document.getElementById("signup-name").required = signup;
+    document.querySelector('#login-form button[type="submit"]').textContent =
+      signup ? "Crear cuenta" : "Entrar";
+    document.getElementById("toggle-signup").textContent = signup
+      ? "Ya tengo cuenta"
+      : "Crear mi cuenta";
+    document.getElementById("login-password").minLength = signup ? 8 : 1;
+  };
+  document.getElementById("login-form").onsubmit = async (e) => {
+    e.preventDefault();
+    if (busy) return;
+    busy = true;
+    const button = document.querySelector('#login-form button[type="submit"]');
+    button.disabled = true;
+    document.getElementById("login-error").classList.add("d-none");
+    try {
+      const email = document.getElementById("login-email").value.trim();
+      const password = document.getElementById("login-password").value;
+      const result = signup
+        ? await account.signUp.email({
+            email,
+            password,
+            name: document.getElementById("signup-name").value.trim(),
+          })
+        : await client.auth.signInWithPassword({ email, password });
+      if (result.error) {
+        if (/verif/i.test(result.error.message))
+          document.getElementById("verify-wrap").classList.remove("d-none");
+        throw result.error;
+      }
+      if (signup) {
+        document.getElementById("verify-wrap").classList.remove("d-none");
+        message("Ingresa el código enviado a tu correo.");
+        return;
+      }
+      const {
+        data: { session },
+        error,
+      } = await client.auth.getSession();
+      if (error) throw error;
+      if (session) await enter();
+      else message("Cuenta creada. Verifica tu correo y luego inicia sesión.");
+    } catch (err) {
+      message(err.message || "No se pudo iniciar sesión");
+    } finally {
+      busy = false;
+      button.disabled = false;
+    }
+  };
+  document.getElementById("btn-logout").onclick = async () => {
+    try {
+      const { error } = await client.auth.signOut();
+      if (error) throw error;
+      profile = null;
+      showLogin();
+      document.getElementById("pending-logout").classList.add("d-none");
+      document.getElementById("verify-wrap").classList.add("d-none");
+    } catch (err) {
+      message(err.message);
+    }
+  };
+  document.getElementById("pending-logout").onclick =
+    document.getElementById("btn-logout").onclick;
+  client.auth.onAuthStateChange((event) => {
+    if (event === "SIGNED_OUT") {
+      profile = null;
+      showLogin();
+    }
+  });
+  // A single explicit transition avoids duplicate loads and session-callback deadlocks.
+  const {
+    data: { session },
+    error,
+  } = await client.auth.getSession();
+  if (error) throw error;
+  if (session) return enter();
   showLogin();
   return false;
 }
-
-function showLoginError(msg) {
-  const errEl = document.getElementById('login-error');
-  if (errEl) {
-    errEl.textContent = msg;
-    errEl.classList.remove('d-none');
-  }
-}
-
-async function loadProfile() {
-  const { data: { user } } = await window.supabase.auth.getUser();
-  if (!user) return;
-
-  const { data, error } = await window.supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .maybeSingle();
-
-  if (error) throw error;
-
-  if (!data) {
-    throw new Error(
-      'No hay perfil para este usuario. Ejecuta supabase/003_backfill_profiles.sql en Supabase.'
-    );
-  }
-
-  profile = data;
-  updateUserDisplay();
-}
-
-export { loadProfile };
-
-async function onLogin(e) {
-  e.preventDefault();
-  if (loginInProgress) return;
-
-  const email = document.getElementById('login-email').value.trim();
-  const password = document.getElementById('login-password').value;
-  const errEl = document.getElementById('login-error');
-  const btn = document.querySelector('#login-form button[type="submit"]');
-
-  errEl.classList.add('d-none');
-  loginInProgress = true;
-  if (btn) {
-    btn.disabled = true;
-    btn.textContent = 'Entrando…';
-  }
-
-  try {
-    const { error } = await window.supabase.auth.signInWithPassword({ email, password });
-    if (error) {
-      showLoginError(error.message);
-      return;
-    }
-    /* onAuthStateChange + handleSession completan el login */
-  } catch (err) {
-    showLoginError(err?.message || String(err));
-  } finally {
-    loginInProgress = false;
-    if (btn) {
-      btn.disabled = false;
-      btn.textContent = 'Entrar';
-    }
-  }
-}
-
-async function onLogout() {
-  await window.supabase.auth.signOut();
-  profile = null;
-  showLogin();
-}
-
-function showLogin() {
-  document.getElementById('login-screen').classList.remove('d-none');
-  document.getElementById('app-shell').classList.remove('ready');
-}
-
-function showAppShell() {
-  document.getElementById('login-screen').classList.add('d-none');
-  document.getElementById('app-shell').classList.add('ready');
-}
-
 export async function requireAuth() {
-  const { data: { user } } = await window.supabase.auth.getUser();
-  if (!user) throw new Error('No autenticado');
+  const {
+    data: { user },
+    error,
+  } = await client.auth.getUser();
+  if (error) throw error;
+  if (!user) throw new Error("No autenticado");
   if (!profile) await loadProfile();
+  if (!isStaff()) throw new Error("Acceso pendiente de aprobación");
   return user;
 }
-
 export async function getCurrentCiclo() {
-  const { data, error } = await window.supabase
-    .from('app_config')
-    .select('value')
-    .eq('key', 'ciclo_actual')
+  const { data, error } = await client
+    .from("app_config")
+    .select("value")
+    .eq("key", "ciclo_actual")
     .maybeSingle();
   if (error) throw error;
-  return parseInt(data?.value || '2', 10);
+  return parseInt(data?.value || "1", 10);
 }
 
 export async function setCurrentCiclo(n) {
-  const { error } = await window.supabase
-    .from('app_config')
-    .upsert({ key: 'ciclo_actual', value: String(n) });
+  if (!isAdmin()) throw new Error("Solo Super Admin puede cambiar el ciclo");
+  const { error } = await client
+    .from("app_config")
+    .upsert({ key: "ciclo_actual", value: String(n) });
   if (error) throw error;
 }
 
 export async function logAction(tipo, detalle, ciclo) {
-  const { data: { user } } = await window.supabase.auth.getUser();
-  await window.supabase.from('action_log').insert({
+  const {
+    data: { user },
+  } = await client.auth.getUser();
+  const { error } = await client.from("action_log").insert({
     user_id: user?.id,
     tipo,
     detalle,
     ciclo: ciclo ?? null,
   });
+  if (error) throw error;
 }

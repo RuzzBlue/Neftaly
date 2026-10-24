@@ -1,3 +1,4 @@
+import { client } from '../client.js';
 import { refreshData, getState, setAsistencia, deleteAsistencia } from '../data.js';
 import { isAdmin } from '../auth.js';
 import { ASISTENCIA_ESTADOS } from '../constants.js';
@@ -130,7 +131,7 @@ function buildPatrullaCards(patrullas, miembros, asistenciaRows, fecha, stats) {
 async function renderReunionForDate(fecha) {
   const el = document.getElementById('asist-tab-content');
   const { patrullas, miembros } = getState();
-  const { data: asistencia } = await window.supabase
+  const { data: asistencia } = await client
     .from('asistencia')
     .select('*')
     .eq('fecha', fecha);
@@ -165,7 +166,7 @@ async function renderMesTab(el) {
   const { patrullas, miembros } = getState();
   const { start, end } = getMonthRange(year, month);
 
-  const { data: monthAsistencia, error } = await window.supabase
+  const { data: monthAsistencia, error } = await client
     .from('asistencia')
     .select('*')
     .gte('fecha', start)
@@ -367,7 +368,7 @@ async function runReport() {
   const { patrullas, miembros } = getState();
   const admin = isAdmin();
 
-  let query = window.supabase.from('asistencia').select('*').gte('fecha', desde).lte('fecha', hasta);
+  let query = client.from('asistencia').select('*').gte('fecha', desde).lte('fecha', hasta);
   if (estadoFilter) query = query.eq('estado', estadoFilter);
   const { data: rows, error } = await query.order('fecha', { ascending: false });
   if (error) throw error;
