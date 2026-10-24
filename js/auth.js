@@ -4,8 +4,9 @@ let onAuthenticated;
 let busy = false;
 let signup = false;
 export const getProfile = () => profile;
-export const isAdmin = () => profile?.role === "admin";
-export const isStaff = () => ["admin", "leader"].includes(profile?.role);
+export const isAdmin = () => profile?.role === "admin" && !profile?.blocked;
+export const isStaff = () =>
+  ["admin", "leader"].includes(profile?.role) && !profile?.blocked;
 export const canAccessConfig = isStaff;
 export const roleLabel = (role) =>
   ({ admin: "Super Admin", leader: "Admin", pending: "Pendiente" })[role] ||
@@ -19,13 +20,28 @@ export function updateUserDisplay() {
   document.getElementById("user-display-role").textContent =
     roleLabel(profile?.role) || "";
   document.getElementById("nav-config").classList.toggle("d-none", !isStaff());
+  document
+    .getElementById("btn-manage-users")
+    .classList.toggle("d-none", !isAdmin());
 }
 function message(text) {
   const el = document.getElementById("login-error");
   el.textContent = text;
   el.classList.remove("d-none");
 }
+function showVerification() {
+  const panel = document.getElementById("verify-wrap");
+  panel.classList.remove("d-none");
+  requestAnimationFrame(() => panel.scrollIntoView({ block: "nearest" }));
+}
 function showLogin() {
+  document
+    .querySelectorAll(".offcanvas.show")
+    .forEach((el) => bootstrap.Offcanvas.getInstance(el)?.hide());
+  document
+    .querySelectorAll(".modal.show")
+    .forEach((el) => bootstrap.Modal.getInstance(el)?.hide());
+  document.body.classList.add("login-visible");
   document.getElementById("login-screen").classList.remove("d-none");
   document.getElementById("app-shell").classList.remove("ready");
 }
@@ -52,11 +68,16 @@ async function enter() {
   if (!isStaff()) {
     showLogin();
     document.getElementById("pending-logout").classList.remove("d-none");
-    message("Tu cuenta está pendiente. Un Super Admin debe aprobar tu acceso.");
+    message(
+      profile.blocked
+        ? "Tu cuenta está bloqueada. Contacta al Super Admin."
+        : "Tu cuenta está pendiente. Un Super Admin debe aprobar tu acceso.",
+    );
     return false;
   }
   document.getElementById("login-screen").classList.add("d-none");
   document.getElementById("app-shell").classList.add("ready");
+  document.body.classList.remove("login-visible");
   document.getElementById("pending-logout").classList.add("d-none");
   await onAuthenticated?.();
   return true;
@@ -126,12 +147,11 @@ export async function initAuth() {
           })
         : await client.auth.signInWithPassword({ email, password });
       if (result.error) {
-        if (/verif/i.test(result.error.message))
-          document.getElementById("verify-wrap").classList.remove("d-none");
+        if (/verif/i.test(result.error.message)) showVerification();
         throw result.error;
       }
       if (signup) {
-        document.getElementById("verify-wrap").classList.remove("d-none");
+        showVerification();
         message("Ingresa el código enviado a tu correo.");
         return;
       }
