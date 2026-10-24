@@ -133,28 +133,19 @@ function renderList() {
   });
 }
 
-function applyPatrullaModalChrome(mode) {
-  const modal = document.getElementById('modal-puntos-patrulla');
-  const isAdd = mode === 'add';
-  const header = modal.querySelector('.modal-header');
-  header.classList.remove('add-points', 'sub-points');
-  header.classList.add(isAdd ? 'add-points' : 'sub-points');
-  document.getElementById('ppt-modal-title').textContent = isAdd ? 'Sumar' : 'Restar';
-  document.getElementById('ppt-to-sub')?.classList.toggle('d-none', !isAdd);
-  document.getElementById('ppt-to-add')?.classList.toggle('d-none', isAdd);
+function applyPointsMode(modalId, prefix, mode) {
+  const modal = document.getElementById(modalId);
+  document.getElementById(prefix + '-to-add').setAttribute('aria-pressed', String(mode === 'add'));
+  document.getElementById(prefix + '-to-sub').setAttribute('aria-pressed', String(mode === 'sub'));
   modal.dataset.mode = mode;
 }
 
+function applyPatrullaModalChrome(mode) {
+  applyPointsMode('modal-puntos-patrulla', 'ppt', mode);
+}
+
 function applyMemberModalChrome(mode) {
-  const modal = document.getElementById('modal-puntos-miembro');
-  const isAdd = mode === 'add';
-  const header = modal.querySelector('.modal-header');
-  header.classList.remove('add-points', 'sub-points');
-  header.classList.add(isAdd ? 'add-points' : 'sub-points');
-  document.getElementById('pmb-modal-title').textContent = isAdd ? 'Añadir' : 'Quitar';
-  document.getElementById('pmb-to-sub')?.classList.toggle('d-none', !isAdd);
-  document.getElementById('pmb-to-add')?.classList.toggle('d-none', isAdd);
-  modal.dataset.mode = mode;
+  applyPointsMode('modal-puntos-miembro', 'pmb', mode);
 }
 
 export function initPointsModalSwitches() {

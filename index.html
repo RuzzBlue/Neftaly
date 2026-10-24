@@ -95,22 +95,16 @@
 </div>
 
 <!-- Modal puntos patrulla -->
-<div class="modal fade" id="modal-puntos-patrulla" tabindex="-1">
+<div class="modal fade" id="modal-puntos-patrulla" tabindex="-1" aria-label="Puntos de patrulla">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
-      <div class="modal-header add-points modal-header-points">
-        <div class="modal-header-slot modal-header-left">
-          <button type="button" class="btn modal-mode-switch btn-points-sub" id="ppt-to-sub">
-            Restar <i class="fa-solid fa-chevron-right"></i>
-          </button>
-          <button type="button" class="btn modal-mode-switch btn-points-add d-none" id="ppt-to-add">
-            <i class="fa-solid fa-chevron-left"></i> Sumar
-          </button>
-        </div>
-        <h5 class="modal-title modal-header-center mb-0" id="ppt-modal-title">Sumar</h5>
-        <div class="modal-header-slot modal-header-right">
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
+      <div class="modal-header modal-header-points" role="group" aria-label="Operación de puntos">
+        <button type="button" class="btn modal-mode-switch btn-points-add" id="ppt-to-add" aria-pressed="true">
+          <i class="fa-solid fa-plus me-1" aria-hidden="true"></i> Sumar
+        </button>
+        <button type="button" class="btn modal-mode-switch btn-points-sub" id="ppt-to-sub" aria-pressed="false">
+          <i class="fa-solid fa-minus me-1" aria-hidden="true"></i> Restar
+        </button>
       </div>
       <div class="modal-body">
         <div class="mb-3">
@@ -134,7 +128,7 @@
           <input type="text" class="form-control" id="ppt-nota">
         </div>
       </div>
-      <div class="modal-footer">
+      <div class="modal-footer justify-content-between">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
         <button type="button" class="btn btn-primary" id="ppt-submit">Guardar</button>
       </div>
@@ -143,22 +137,16 @@
 </div>
 
 <!-- Modal puntos miembro -->
-<div class="modal fade" id="modal-puntos-miembro" tabindex="-1">
+<div class="modal fade" id="modal-puntos-miembro" tabindex="-1" aria-label="Puntos del miembro">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
-      <div class="modal-header add-points modal-header-points">
-        <div class="modal-header-slot modal-header-left">
-          <button type="button" class="btn modal-mode-switch btn-points-sub" id="pmb-to-sub">
-            Quitar <i class="fa-solid fa-chevron-right"></i>
-          </button>
-          <button type="button" class="btn modal-mode-switch btn-points-add d-none" id="pmb-to-add">
-            <i class="fa-solid fa-chevron-left"></i> Añadir
-          </button>
-        </div>
-        <h5 class="modal-title modal-header-center mb-0" id="pmb-modal-title">Añadir</h5>
-        <div class="modal-header-slot modal-header-right">
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
+      <div class="modal-header modal-header-points" role="group" aria-label="Operación de puntos">
+        <button type="button" class="btn modal-mode-switch btn-points-add" id="pmb-to-add" aria-pressed="true">
+          <i class="fa-solid fa-plus me-1" aria-hidden="true"></i> Sumar
+        </button>
+        <button type="button" class="btn modal-mode-switch btn-points-sub" id="pmb-to-sub" aria-pressed="false">
+          <i class="fa-solid fa-minus me-1" aria-hidden="true"></i> Restar
+        </button>
       </div>
       <div class="modal-body">
         <div class="mb-3">
@@ -182,7 +170,7 @@
           <input type="text" class="form-control" id="pmb-nota">
         </div>
       </div>
-      <div class="modal-footer">
+      <div class="modal-footer justify-content-between">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
         <button type="button" class="btn btn-primary" id="pmb-submit">Guardar</button>
       </div>
