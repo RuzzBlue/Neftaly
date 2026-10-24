@@ -141,9 +141,10 @@ try {
   });
   assert.equal(r.status, 200);
   r = await query(leader.token, "/patrullas", "POST", {
-    nombre: "Forbidden leader create",
+    nombre: `Leader patrol ${randomUUID()}`,
   });
-  assert.ok(r.status >= 400);
+  assert.equal(r.status, 201);
+  const leaderPatrol = r.data[0];
   r = await query(admin.token, "/miembros", "POST", {
     nombre: "Test scout",
     patrulla_id: patrol.id,
@@ -187,6 +188,136 @@ try {
     keep_asistencia: true,
   });
   assert.equal(r.status, 204);
+  const beforeCycle = await query(
+    leader.token,
+    "/app_config?key=eq.ciclo_actual&select=value",
+  );
+  r = await query(leader.token, "/app_config?key=eq.ciclo_actual", "PATCH", {
+    value: "3",
+  });
+  assert.ok(r.status >= 400 || r.data.length === 0);
+  const afterCycle = await query(
+    leader.token,
+    "/app_config?key=eq.ciclo_actual&select=value",
+  );
+  assert.deepEqual(afterCycle.data, beforeCycle.data);
+  r = await query(leader.token, "/app_config", "POST", {
+    key: "forbidden",
+    value: "3",
+  });
+  assert.ok(r.status >= 400);
+  r = await query(admin.token, "/app_config?key=eq.ciclo_actual", "PATCH", {
+    value: "2",
+  });
+  assert.equal(r.status, 200);
+  assert.equal(r.data[0].value, "2");
+  r = await query(admin.token, "/app_config?key=eq.ciclo_actual", "PATCH", {
+    value: "1",
+  });
+  assert.equal(r.status, 200);
+  r = await query(leader.token, "/miembros", "POST", {
+    nombre: "Leader-created scout",
+    patrulla_id: leaderPatrol.id,
+  });
+  assert.equal(r.status, 201);
+  const leaderMember = r.data[0];
+  r = await query(leader.token, `/miembros?id=eq.${leaderMember.id}`, "PATCH", {
+    nombre: "Renamed scout",
+    es_guia: true,
+  });
+  assert.equal(r.status, 200);
+  assert.equal(r.data[0].nombre, "Renamed scout");
+  r = await query(leader.token, "/cargos", "POST", {
+    nombre: `Cargo ${randomUUID()}`,
+  });
+  assert.equal(r.status, 201);
+  const cargo = r.data[0];
+  r = await query(leader.token, `/cargos?id=eq.${cargo.id}`, "PATCH", {
+    nombre: `Edited cargo ${randomUUID()}`,
+  });
+  assert.equal(r.status, 200);
+  r = await query(leader.token, "/miembro_cargos", "POST", {
+    miembro_id: leaderMember.id,
+    cargo_id: cargo.id,
+  });
+  assert.equal(r.status, 201);
+  r = await query(leader.token, "/puntos_crecimiento", "POST", {
+    miembro_id: leaderMember.id,
+    ciclo: 1,
+    area: "caracter",
+    delta: 1,
+    created_by: leader.id,
+  });
+  assert.equal(r.status, 201);
+  r = await query(leader.token, "/rpc/delete_troop_members", "POST", {
+    member_ids: [leaderMember.id],
+  });
+  assert.equal(r.status, 204);
+  r = await query(leader.token, `/miembros?id=eq.${leaderMember.id}&select=*`);
+  assert.equal(r.data.length, 0);
+  r = await query(
+    leader.token,
+    `/puntos_crecimiento?miembro_id=eq.${leaderMember.id}&select=*`,
+  );
+  assert.equal(r.data.length, 0);
+  r = await query(
+    leader.token,
+    `/miembro_cargos?miembro_id=eq.${leaderMember.id}&select=*`,
+  );
+  assert.equal(r.data.length, 0);
+  r = await query(leader.token, `/cargos?id=eq.${cargo.id}`, "DELETE");
+  assert.equal(r.status, 200);
+  r = await query(leader.token, "/miembros", "POST", {
+    nombre: "Relocated scout",
+    patrulla_id: leaderPatrol.id,
+  });
+  assert.equal(r.status, 201);
+  const relocated = r.data[0];
+  r = await query(leader.token, "/puntos_patrulla", "POST", {
+    patrulla_id: leaderPatrol.id,
+    ciclo: 1,
+    delta: 1,
+    created_by: leader.id,
+  });
+  assert.equal(r.status, 201);
+  r = await query(leader.token, "/rpc/delete_troop_patrol", "POST", {
+    patrol_id: leaderPatrol.id,
+    delete_members: false,
+  });
+  assert.equal(r.status, 204);
+  r = await query(leader.token, `/miembros?id=eq.${relocated.id}&select=*`);
+  assert.equal(r.data.length, 1);
+  assert.notEqual(r.data[0].patrulla_id, leaderPatrol.id);
+  r = await query(
+    leader.token,
+    `/puntos_patrulla?patrulla_id=eq.${leaderPatrol.id}&select=*`,
+  );
+  assert.equal(r.data.length, 0);
+  r = await query(leader.token, "/rpc/delete_troop_members", "POST", {
+    member_ids: [relocated.id],
+  });
+  assert.equal(r.status, 204);
+  r = await query(leader.token, "/patrullas", "POST", {
+    nombre: `Delete with members ${randomUUID()}`,
+  });
+  assert.equal(r.status, 201);
+  const removedPatrol = r.data[0];
+  r = await query(leader.token, "/miembros", "POST", {
+    nombre: "Deleted with patrol",
+    patrulla_id: removedPatrol.id,
+  });
+  assert.equal(r.status, 201);
+  const removedMember = r.data[0];
+  r = await query(leader.token, "/rpc/delete_troop_patrol", "POST", {
+    patrol_id: removedPatrol.id,
+    delete_members: true,
+  });
+  assert.equal(r.status, 204);
+  r = await query(leader.token, `/miembros?id=eq.${removedMember.id}&select=*`);
+  assert.equal(r.data.length, 0);
+  console.log(
+    "PASS: leaders can manage patrols, member names and cargos; both patrol deletion modes work; leaders cannot change cycle or reset troop.",
+  );
   console.log(
     "PASS: anonymous/pending access denied; self-promotion denied; admin approval, patrols, members, points, attendance, reset permissions work.",
   );

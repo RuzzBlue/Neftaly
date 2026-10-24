@@ -16,9 +16,9 @@ Run `npm run dev` and open the printed /Neftaly/ URL. Register the exact local o
 
 ## Schema and accounts
 
-`neon/001_schema.sql` defines the fresh Neon schema, profile trigger, roles, RLS, and reset function. Test changes on a Neon branch first. Apply with `npm run migrate`, then `npx neon@latest data-api refresh-schema --database neftalydb`.
+The numbered files in `neon/` define the fresh schema and permission updates. `npm run migrate` applies them in order. Test changes on a Neon branch first. Apply with `npm run migrate`, then `npx neon@latest data-api refresh-schema --database neftalydb`.
 
-Every person registers their own email, name, and password, then enters the email verification code. Email/password Auth must require verification with OTP enabled. New accounts have the pending role and cannot read troop data. Super Admin approves accounts in **Editar cuenta → Usuarios**. Leaders keep the existing troop permissions; only Super Admin can assign roles or reset the troop. The final Super Admin cannot demote themselves.
+Every person registers their own email, name, and password, then enters the email verification code. Email/password Auth must require verification with OTP enabled. New accounts have the pending role and cannot read troop data. Super Admin approves accounts in **Editar cuenta → Usuarios**. Leaders can add, edit, and delete patrols, members (including names), and cargos. Only Super Admin can change the cycle, assign account roles, or reset the troop. The final Super Admin cannot demote themselves.
 
 The first administrator is reserved in `neftaly_private.bootstrap_admin`, outside the exposed API schema. Insert the owner's email with a parameterized administrative SQL query before registration. Only a verified email can consume that reservation. Do not assign the first person who signs up as admin.
 

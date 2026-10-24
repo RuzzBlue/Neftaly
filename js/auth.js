@@ -201,6 +201,7 @@ export async function getCurrentCiclo() {
 }
 
 export async function setCurrentCiclo(n) {
+  if (!isAdmin()) throw new Error("Solo Super Admin puede cambiar el ciclo");
   const { error } = await client
     .from("app_config")
     .upsert({ key: "ciclo_actual", value: String(n) });
