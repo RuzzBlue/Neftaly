@@ -24,13 +24,25 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Build
+        run: npm ci && npm run build
+        env:
+          # Public Auth endpoint; no database credentials belong in this build.
+          NEON_AUTH_BASE_URL: https://ep-purple-firefly-b8dn3pr7.neonauth.c-14.us-east-1.aws.neon.tech/neftalydb/auth
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
       - name: Upload site
         uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: dist
 
       - name: Deploy
         id: deployment

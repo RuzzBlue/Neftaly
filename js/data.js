@@ -1,3 +1,4 @@
+import { client } from './client.js';
 import { getCurrentCiclo, logAction, isAdmin } from './auth.js';
 import { AREAS } from './constants.js';
 import { computeAsistenciaStats, groupSum, showError, toast, escapeHtml, fmtDate, getLastSaturday } from './utils.js';
@@ -17,7 +18,7 @@ export function getState() { return state; }
 
 export async function refreshData() {
   state.ciclo = await getCurrentCiclo();
-  const sb = window.supabase;
+  const sb = client;
   const [p, m, c, mc, pp, pc, a] = await Promise.all([
     sb.from('patrullas').select('*').order('orden'),
     sb.from('miembros').select('*').eq('activo', true).order('nombre'),
@@ -80,8 +81,8 @@ export function getCargoNames(miembroId) {
 }
 
 export async function addPatrullaPoints(patrullaId, delta, nota) {
-  const { data: { user } } = await window.supabase.auth.getUser();
-  const { error } = await window.supabase.from('puntos_patrulla').insert({
+  const { data: { user } } = await client.auth.getUser();
+  const { error } = await client.from('puntos_patrulla').insert({
     patrulla_id: patrullaId,
     ciclo: state.ciclo,
     delta,
@@ -101,8 +102,8 @@ export async function addPatrullaPoints(patrullaId, delta, nota) {
 }
 
 export async function addCrecimientoPoints(miembroId, area, delta, nota) {
-  const { data: { user } } = await window.supabase.auth.getUser();
-  const { error } = await window.supabase.from('puntos_crecimiento').insert({
+  const { data: { user } } = await client.auth.getUser();
+  const { error } = await client.from('puntos_crecimiento').insert({
     miembro_id: miembroId,
     ciclo: state.ciclo,
     area,
@@ -124,8 +125,8 @@ export async function addCrecimientoPoints(miembroId, area, delta, nota) {
 }
 
 export async function setAsistencia(miembroId, fecha, estado) {
-  const { data: { user } } = await window.supabase.auth.getUser();
-  const { error } = await window.supabase.from('asistencia').upsert({
+  const { data: { user } } = await client.auth.getUser();
+  const { error } = await client.from('asistencia').upsert({
     miembro_id: miembroId,
     fecha,
     estado,
@@ -138,7 +139,7 @@ export async function setAsistencia(miembroId, fecha, estado) {
 }
 
 export async function deleteAsistencia(miembroId, fecha) {
-  const { error } = await window.supabase.from('asistencia')
+  const { error } = await client.from('asistencia')
     .delete()
     .eq('miembro_id', miembroId)
     .eq('fecha', fecha);
@@ -147,7 +148,7 @@ export async function deleteAsistencia(miembroId, fecha) {
 }
 
 async function deleteAllFrom(table, column = 'id') {
-  const { error } = await window.supabase.from(table).delete().gte(column, 0);
+  const { error } = await client.from(table).delete().gte(column, 0);
   if (error) throw error;
 }
 
@@ -173,14 +174,14 @@ async function resetTroopDataClient({ keepPatrullas, keepMiembros, keepAsistenci
     await deleteAllFrom('patrullas');
   }
 
-  const { error } = await window.supabase
+  const { error } = await client
     .from('app_config')
     .upsert({ key: 'ciclo_actual', value: '1' });
   if (error) throw error;
 }
 
 export async function resetTroopData({ keepPatrullas, keepMiembros, keepAsistencia }) {
-  const { error } = await window.supabase.rpc('reset_troop_data', {
+  const { error } = await client.rpc('reset_troop_data', {
     keep_patrullas: keepPatrullas,
     keep_miembros: keepMiembros,
     keep_asistencia: keepAsistencia,

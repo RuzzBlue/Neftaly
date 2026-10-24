@@ -1,3 +1,4 @@
+import { client } from '../client.js';
 import { refreshData, getState, patrullaPoints } from '../data.js';
 import { AREAS, CICLOS } from '../constants.js';
 import { escapeHtml, groupSum } from '../utils.js';
@@ -49,9 +50,9 @@ async function runReport() {
   const { patrullas, miembros } = getState();
 
   const [pp, pc, as] = await Promise.all([
-    window.supabase.from('puntos_patrulla').select('*').eq('ciclo', ciclo),
-    window.supabase.from('puntos_crecimiento').select('*').eq('ciclo', ciclo),
-    window.supabase.from('asistencia').select('*').eq('estado', 'asistio'),
+    client.from('puntos_patrulla').select('*').eq('ciclo', ciclo),
+    client.from('puntos_crecimiento').select('*').eq('ciclo', ciclo),
+    client.from('asistencia').select('*').eq('estado', 'asistio'),
   ]);
 
   let puntosPat = pp.data || [];

@@ -1,3 +1,4 @@
+import { client } from '../client.js';
 import { refreshData, getState, resetTroopData, getCargoNames, isAdmin } from '../data.js';
 import { setCurrentCiclo, canAccessConfig } from '../auth.js';
 import { CICLOS } from '../constants.js';
@@ -427,11 +428,11 @@ async function savePatrullaModal() {
   saving = true;
   try {
     if (id) {
-      const { error } = await window.supabase.from('patrullas').update({ nombre, color }).eq('id', parseInt(id, 10));
+      const { error } = await client.from('patrullas').update({ nombre, color }).eq('id', parseInt(id, 10));
       if (error) throw error;
       toast('Patrulla actualizada');
     } else {
-      const { error } = await window.supabase.from('patrullas').insert({ nombre, color, orden: 99 });
+      const { error } = await client.from('patrullas').insert({ nombre, color, orden: 99 });
       if (error) throw error;
       toast('Patrulla creada');
     }
@@ -443,7 +444,7 @@ async function savePatrullaModal() {
 }
 
 async function fetchMemberIdsByPatrulla(patrullaId) {
-  const { data, error } = await window.supabase
+  const { data, error } = await client
     .from('miembros')
     .select('id')
     .eq('patrulla_id', patrullaId);
@@ -453,13 +454,13 @@ async function fetchMemberIdsByPatrulla(patrullaId) {
 
 async function hardDeleteMiembros(ids) {
   if (!ids.length) return;
-  const { error: pcErr } = await window.supabase
+  const { error: pcErr } = await client
     .from('puntos_crecimiento')
     .delete()
     .in('miembro_id', ids);
   if (pcErr) throw pcErr;
 
-  const { error } = await window.supabase.from('miembros').delete().in('id', ids);
+  const { error } = await client.from('miembros').delete().in('id', ids);
   if (error) throw error;
 }
 
@@ -469,7 +470,7 @@ async function hardDeleteAllMiembrosInPatrulla(patrullaId) {
 }
 
 async function relocateAllMiembrosFromPatrulla(patrullaId, targetId) {
-  const { error } = await window.supabase
+  const { error } = await client
     .from('miembros')
     .update({ patrulla_id: targetId, es_guia: false, es_subguia: false })
     .eq('patrulla_id', patrullaId);
@@ -518,7 +519,7 @@ async function findOrCreateDefaultPatrulla(excludeId) {
     n += 1;
   }
 
-  const { data, error } = await window.supabase
+  const { data, error } = await client
     .from('patrullas')
     .insert({ nombre: `Default ${n}`, color: '#6c757d', orden: 999 })
     .select()
@@ -551,10 +552,10 @@ async function executeDeletePatrulla() {
       }
     }
 
-    const { error: ptsErr } = await window.supabase.from('puntos_patrulla').delete().eq('patrulla_id', id);
+    const { error: ptsErr } = await client.from('puntos_patrulla').delete().eq('patrulla_id', id);
     if (ptsErr) throw ptsErr;
 
-    const { error } = await window.supabase.from('patrullas').delete().eq('id', id);
+    const { error } = await client.from('patrullas').delete().eq('id', id);
     if (error) throw error;
 
     hideModal('modal-delete-patrulla');
@@ -623,7 +624,7 @@ async function clearExclusiveRolesInPatrulla(miembroId, patrullaId, { esGuia, es
 
   if (esGuia) {
     for (const s of siblings.filter((m) => m.es_guia)) {
-      const { error } = await window.supabase
+      const { error } = await client
         .from('miembros')
         .update({ es_guia: false })
         .eq('id', s.id);
@@ -633,7 +634,7 @@ async function clearExclusiveRolesInPatrulla(miembroId, patrullaId, { esGuia, es
 
   if (esSubguia) {
     for (const s of siblings.filter((m) => m.es_subguia)) {
-      const { error } = await window.supabase
+      const { error } = await client
         .from('miembros')
         .update({ es_subguia: false })
         .eq('id', s.id);
@@ -655,7 +656,7 @@ async function syncMiembroCargos(miembroId, selectedIds, patrullaId) {
         (x) => x.miembro_id === otherId && x.cargo_id === cargo_id
       );
       if (!hadCargo) continue;
-      const { error } = await window.supabase.from('miembro_cargos')
+      const { error } = await client.from('miembro_cargos')
         .delete()
         .eq('miembro_id', otherId)
         .eq('cargo_id', cargo_id);
@@ -668,11 +669,11 @@ async function syncMiembroCargos(miembroId, selectedIds, patrullaId) {
   const toRemove = current.filter((cid) => !selectedIds.includes(cid));
 
   for (const cargo_id of toAdd) {
-    const { error } = await window.supabase.from('miembro_cargos').insert({ miembro_id: miembroId, cargo_id });
+    const { error } = await client.from('miembro_cargos').insert({ miembro_id: miembroId, cargo_id });
     if (error) throw error;
   }
   for (const cargo_id of toRemove) {
-    const { error } = await window.supabase.from('miembro_cargos')
+    const { error } = await client.from('miembro_cargos')
       .delete()
       .eq('miembro_id', miembroId)
       .eq('cargo_id', cargo_id);
@@ -711,11 +712,11 @@ async function saveMiembroModal() {
     });
 
     if (idVal) {
-      const { error } = await window.supabase.from('miembros').update(payload).eq('id', miembroId);
+      const { error } = await client.from('miembros').update(payload).eq('id', miembroId);
       if (error) throw error;
       toast('Miembro actualizado');
     } else {
-      const { data, error } = await window.supabase.from('miembros').insert(payload).select().single();
+      const { data, error } = await client.from('miembros').insert(payload).select().single();
       if (error) throw error;
       miembroId = data.id;
       toast('Miembro creado');
@@ -763,11 +764,11 @@ async function saveCargoModal() {
   saving = true;
   try {
     if (idVal) {
-      const { error } = await window.supabase.from('cargos').update({ nombre }).eq('id', parseInt(idVal, 10));
+      const { error } = await client.from('cargos').update({ nombre }).eq('id', parseInt(idVal, 10));
       if (error) throw error;
       toast('Cargo actualizado');
     } else {
-      const { error } = await window.supabase.from('cargos').insert({ nombre, orden: 99 });
+      const { error } = await client.from('cargos').insert({ nombre, orden: 99 });
       if (error) throw error;
       toast('Cargo creado');
     }
@@ -782,7 +783,7 @@ function confirmDeleteCargo(id) {
   if (!isAdmin()) return;
   const c = getState().cargos.find((x) => x.id === id);
   openDeleteModal(`¿Eliminar el cargo "${c?.nombre}"? Se quitará de quienes lo tengan asignado.`, async () => {
-    const { error } = await window.supabase.from('cargos').delete().eq('id', id);
+    const { error } = await client.from('cargos').delete().eq('id', id);
     if (error) throw error;
     hideModal('modal-cfg-delete');
     toast('Cargo eliminado', 'warning');
